@@ -100,23 +100,3 @@ def load_features(load_path):
     labels=data["labels"]
     paths=data["paths"]
     return feature_matrix,labels,paths
-
-if __name__ == "__main__":
-    # 第1步：读入captions.csv，拿到100句文本及对应的标签、图片路径
-    texts, labels, image_paths = load_captions("data/texts/captions.csv")
-    print("句子数量：", len(texts))                  # 期待 100
-
-    # 第2步：一次编码全部句子、BERT提特征、取CLS
-    text_features = extract_text_features(texts)
-    print("文本特征形状：", text_features.shape)      # 期待 torch.Size([100, 768])
-
-    print("标签数量：", len(labels))                 # 期待 100
-    print("前3个标签：", labels[:3])                 # ['ant','ant','ant']
-    print("第0句：", texts[0])                       # a photo of a ant
-        # 第3步：把文本特征连同标签、路径一起存盘
-    save_features(text_features, labels, image_paths, "output/features/text_features.pth")
-
-    # 第4步：立即读回，验证存取完全一致
-    tf2, labels2, paths2 = load_features("output/features/text_features.pth")
-    print("读回特征形状：", tf2.shape)                         # 仍应 [100, 768]
-    print("存取是否完全一致：", torch.equal(text_features, tf2))  # True
