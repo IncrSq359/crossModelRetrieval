@@ -1,0 +1,22 @@
+# ---- Python ----
+# Python 运行时自动生成的字节码缓存文件夹
+__pycache__/
+# 匹配 .pyc / .pyo / .pyd 等编译产物
+*.py[cod]
+# 包安装信息
+*.egg-info/
+# 虚拟环境（两种常见命名都忽略）
+.venv/
+venv/
+
+# ---- 数据：只忽略全量原始数据（约226MB），子集 images 和 texts 保留 ----
+exp1/data/raw/
+
+# ---- 实验输出（特征向量、相似度矩阵等产物）----
+exp1/output/
+
+# ---- 编辑器 / 系统文件 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
