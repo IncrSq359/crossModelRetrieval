@@ -1,3 +1,5 @@
+"""文本特征模块：读取图片描述，用预训练 BERT 把句子编码成 768 维特征，并负责存取。"""
+
 import os
 import csv
 from pathlib import Path
@@ -10,6 +12,14 @@ from transformers import BertModel
 from transformers import BertTokenizer
 
 def load_captions(csv_path):
+    """读取 captions.csv，取出文本、标签和图片路径。
+
+    Args:
+        csv_path: CSV 文件路径，表头含 image、text、label 三列。
+
+    Returns:
+        三元组 (texts, labels, image_paths)，均为长度相同的列表、逐行对应。
+    """
     texts=[]
     labels=[]
     image_paths=[]
@@ -22,11 +32,25 @@ def load_captions(csv_path):
     return texts,labels,image_paths
 
 def load_bert():
+    """加载预训练 BERT 模型并设为评估模式。
+
+    Returns:
+        处于 eval 模式的 BertModel。
+    """
     model=BertModel.from_pretrained("bert-base-uncased")
     model.eval()
     return model
 
 def extract_text_features(texts,max_length=16):
+    """把一批句子编码成 BERT 的 CLS 句向量。
+
+    Args:
+        texts: 字符串列表（每个元素是一句描述）。
+        max_length: 分词后保留的最大词元数，超出截断、不足补 PAD，默认 16。
+
+    Returns:
+        特征张量，形状 [句子数, 768]，取每个句子第一个位置(CLS)的输出作为整句表示。
+    """
     tokenizer=BertTokenizer.from_pretrained("bert-base-uncased")
     model=load_bert()
     encoded=tokenizer(
@@ -45,6 +69,14 @@ def extract_text_features(texts,max_length=16):
     return features
 
 def save_features(feature_matrix,labels,paths,save_path):
+    """把特征、标签、路径打包成字典保存到磁盘。
+
+    Args:
+        feature_matrix: 特征张量。
+        labels: 标签列表。
+        paths: 图片路径列表。
+        save_path: 目标文件路径，所在目录不存在时会自动创建。
+    """
     Path(save_path).parent.mkdir(parents=True,exist_ok=True)
     data={
         "features":feature_matrix,
@@ -55,6 +87,14 @@ def save_features(feature_matrix,labels,paths,save_path):
     print(f"特征已保存到 {save_path}")
 
 def load_features(load_path):
+    """从磁盘读回 save_features 保存的特征数据。
+
+    Args:
+        load_path: 特征文件路径。
+
+    Returns:
+        三元组 (feature_matrix, labels, paths)。
+    """
     data=torch.load(load_path,map_location='cpu',weights_only=True)
     feature_matrix=data["features"]
     labels=data["labels"]
