@@ -1,3 +1,5 @@
+from os import path
+from pathlib import Path
 from torch.utils.data import Dataset,DataLoader
 from PIL import Image
 import torch
@@ -42,6 +44,23 @@ def extract_image_features(dataset,batch_size=32):
     feature_matrix=torch.cat(all_features,dim=0)
     return feature_matrix,all_labels,all_paths
 
+def save_features(feature_matrix,labels,paths,save_path):
+    Path(save_path).parent.mkdir(parents=True,exist_ok=True)
+    data={
+        "features":feature_matrix,
+        "labels":labels,
+        "paths":paths
+    }
+    torch.save(data,save_path)
+    print(f"特征已保存到 {save_path}")
+
+def load_features(load_path):
+    data=torch.load(load_path,map_location='cpu',weights_only=True)
+    feature_matrix=data["features"]
+    labels=data["labels"]
+    paths=data["paths"]
+    return feature_matrix,labels,paths
+
 if __name__ == "__main__":
     from data_loader import get_image_data      # 导入：拿到图像记录的函数
     from preprocess import get_image_transform  # 导入：拿到预处理流水线的函数
@@ -57,3 +76,11 @@ if __name__ == "__main__":
     print("标签数量：", len(labels))                # 期待 100
     print("路径数量：", len(paths))                 # 期待 100
     print("前3个标签：", labels[:3])                # 期待前3个都是 ant
+
+        # 保存到 output/features 目录（该目录已被gitignore忽略，不进仓库）
+    save_features(feature_matrix, labels, paths, "output/features/image_features.pth")
+
+    # 立即读回，验证存取一致
+    fm2, labels2, paths2 = load_features("output/features/image_features.pth")
+    print("读回特征形状：", fm2.shape)              # 仍应是 [100, 2048]
+    print("存取是否完全一致：", torch.equal(feature_matrix, fm2))   # True
