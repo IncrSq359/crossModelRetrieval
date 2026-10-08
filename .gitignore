@@ -10,10 +10,10 @@ __pycache__/
 venv/
 
 # ---- 数据：只忽略全量原始数据（约226MB），子集 images 和 texts 保留 ----
-exp1/data/raw/
+data/raw/
 
 # ---- 实验输出（特征向量、相似度矩阵等产物）----
-exp1/output/
+output/
 
 # ---- 编辑器 / 系统文件 ----
 .vscode/
