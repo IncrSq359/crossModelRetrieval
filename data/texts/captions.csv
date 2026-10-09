@@ -1,101 +1,101 @@
 image,text,label
-data\images\ant\image_0003.jpg,a photo of a ant,ant
-data\images\ant\image_0004.jpg,a photo of a ant,ant
-data\images\ant\image_0007.jpg,a photo of a ant,ant
-data\images\ant\image_0008.jpg,a photo of a ant,ant
-data\images\ant\image_0010.jpg,a photo of a ant,ant
-data\images\ant\image_0013.jpg,a photo of a ant,ant
-data\images\ant\image_0015.jpg,a photo of a ant,ant
-data\images\ant\image_0018.jpg,a photo of a ant,ant
-data\images\ant\image_0028.jpg,a photo of a ant,ant
-data\images\ant\image_0034.jpg,a photo of a ant,ant
-data\images\camera\image_0006.jpg,a photo of a camera,camera
+data\images\ant\image_0003.jpg,this picture contains an ant,ant
+data\images\ant\image_0004.jpg,a close-up photo of an ant,ant
+data\images\ant\image_0007.jpg,a photo of an ant,ant
+data\images\ant\image_0008.jpg,an ant in a photograph,ant
+data\images\ant\image_0010.jpg,an image of an ant,ant
+data\images\ant\image_0013.jpg,a view of an ant,ant
+data\images\ant\image_0015.jpg,a clear shot of an ant,ant
+data\images\ant\image_0018.jpg,a camera capture of an ant,ant
+data\images\ant\image_0028.jpg,there is an ant in this picture,ant
+data\images\ant\image_0034.jpg,a picture showing an ant,ant
+data\images\camera\image_0006.jpg,a clear shot of a camera,camera
 data\images\camera\image_0008.jpg,a photo of a camera,camera
-data\images\camera\image_0017.jpg,a photo of a camera,camera
-data\images\camera\image_0018.jpg,a photo of a camera,camera
-data\images\camera\image_0022.jpg,a photo of a camera,camera
-data\images\camera\image_0025.jpg,a photo of a camera,camera
-data\images\camera\image_0029.jpg,a photo of a camera,camera
-data\images\camera\image_0034.jpg,a photo of a camera,camera
-data\images\camera\image_0043.jpg,a photo of a camera,camera
-data\images\camera\image_0050.jpg,a photo of a camera,camera
-data\images\cannon\image_0001.jpg,a photo of a cannon,cannon
-data\images\cannon\image_0014.jpg,a photo of a cannon,cannon
-data\images\cannon\image_0016.jpg,a photo of a cannon,cannon
-data\images\cannon\image_0019.jpg,a photo of a cannon,cannon
-data\images\cannon\image_0026.jpg,a photo of a cannon,cannon
-data\images\cannon\image_0027.jpg,a photo of a cannon,cannon
-data\images\cannon\image_0028.jpg,a photo of a cannon,cannon
-data\images\cannon\image_0030.jpg,a photo of a cannon,cannon
+data\images\camera\image_0017.jpg,this picture contains a camera,camera
+data\images\camera\image_0018.jpg,a close-up photo of a camera,camera
+data\images\camera\image_0022.jpg,an image of a camera,camera
+data\images\camera\image_0025.jpg,there is a camera in this picture,camera
+data\images\camera\image_0029.jpg,a camera in a photograph,camera
+data\images\camera\image_0034.jpg,a photograph featuring a camera,camera
+data\images\camera\image_0043.jpg,a camera capture of a camera,camera
+data\images\camera\image_0050.jpg,a picture showing a camera,camera
+data\images\cannon\image_0001.jpg,an image of a cannon,cannon
+data\images\cannon\image_0014.jpg,this picture contains a cannon,cannon
+data\images\cannon\image_0016.jpg,there is a cannon in this picture,cannon
+data\images\cannon\image_0019.jpg,a clear shot of a cannon,cannon
+data\images\cannon\image_0026.jpg,a view of a cannon,cannon
+data\images\cannon\image_0027.jpg,a cannon seen up close,cannon
+data\images\cannon\image_0028.jpg,a cannon in a photograph,cannon
+data\images\cannon\image_0030.jpg,a picture showing a cannon,cannon
 data\images\cannon\image_0037.jpg,a photo of a cannon,cannon
-data\images\cannon\image_0039.jpg,a photo of a cannon,cannon
-data\images\cellphone\image_0003.jpg,a photo of a cellphone,cellphone
-data\images\cellphone\image_0004.jpg,a photo of a cellphone,cellphone
-data\images\cellphone\image_0016.jpg,a photo of a cellphone,cellphone
-data\images\cellphone\image_0021.jpg,a photo of a cellphone,cellphone
-data\images\cellphone\image_0024.jpg,a photo of a cellphone,cellphone
-data\images\cellphone\image_0028.jpg,a photo of a cellphone,cellphone
-data\images\cellphone\image_0044.jpg,a photo of a cellphone,cellphone
+data\images\cannon\image_0039.jpg,a camera capture of a cannon,cannon
+data\images\cellphone\image_0003.jpg,a view of a cellphone,cellphone
+data\images\cellphone\image_0004.jpg,a clear shot of a cellphone,cellphone
+data\images\cellphone\image_0016.jpg,a photograph featuring a cellphone,cellphone
+data\images\cellphone\image_0021.jpg,a cellphone in a photograph,cellphone
+data\images\cellphone\image_0024.jpg,a picture showing a cellphone,cellphone
+data\images\cellphone\image_0028.jpg,a close-up photo of a cellphone,cellphone
+data\images\cellphone\image_0044.jpg,a cellphone seen up close,cellphone
 data\images\cellphone\image_0049.jpg,a photo of a cellphone,cellphone
-data\images\cellphone\image_0051.jpg,a photo of a cellphone,cellphone
-data\images\cellphone\image_0053.jpg,a photo of a cellphone,cellphone
-data\images\dollar_bill\image_0006.jpg,a photo of a dollar bill,dollar_bill
-data\images\dollar_bill\image_0014.jpg,a photo of a dollar bill,dollar_bill
-data\images\dollar_bill\image_0019.jpg,a photo of a dollar bill,dollar_bill
-data\images\dollar_bill\image_0020.jpg,a photo of a dollar bill,dollar_bill
+data\images\cellphone\image_0051.jpg,there is a cellphone in this picture,cellphone
+data\images\cellphone\image_0053.jpg,this picture contains a cellphone,cellphone
+data\images\dollar_bill\image_0006.jpg,a close-up photo of a dollar bill,dollar_bill
+data\images\dollar_bill\image_0014.jpg,a photograph featuring a dollar bill,dollar_bill
+data\images\dollar_bill\image_0019.jpg,this picture contains a dollar bill,dollar_bill
+data\images\dollar_bill\image_0020.jpg,a dollar bill in a photograph,dollar_bill
 data\images\dollar_bill\image_0021.jpg,a photo of a dollar bill,dollar_bill
-data\images\dollar_bill\image_0025.jpg,a photo of a dollar bill,dollar_bill
-data\images\dollar_bill\image_0030.jpg,a photo of a dollar bill,dollar_bill
-data\images\dollar_bill\image_0032.jpg,a photo of a dollar bill,dollar_bill
-data\images\dollar_bill\image_0045.jpg,a photo of a dollar bill,dollar_bill
-data\images\dollar_bill\image_0051.jpg,a photo of a dollar bill,dollar_bill
-data\images\electric_guitar\image_0009.jpg,a photo of a electric guitar,electric_guitar
-data\images\electric_guitar\image_0011.jpg,a photo of a electric guitar,electric_guitar
-data\images\electric_guitar\image_0023.jpg,a photo of a electric guitar,electric_guitar
-data\images\electric_guitar\image_0026.jpg,a photo of a electric guitar,electric_guitar
-data\images\electric_guitar\image_0032.jpg,a photo of a electric guitar,electric_guitar
-data\images\electric_guitar\image_0033.jpg,a photo of a electric guitar,electric_guitar
-data\images\electric_guitar\image_0038.jpg,a photo of a electric guitar,electric_guitar
-data\images\electric_guitar\image_0052.jpg,a photo of a electric guitar,electric_guitar
-data\images\electric_guitar\image_0068.jpg,a photo of a electric guitar,electric_guitar
-data\images\electric_guitar\image_0069.jpg,a photo of a electric guitar,electric_guitar
-data\images\ewer\image_0008.jpg,a photo of a ewer,ewer
-data\images\ewer\image_0011.jpg,a photo of a ewer,ewer
-data\images\ewer\image_0014.jpg,a photo of a ewer,ewer
-data\images\ewer\image_0019.jpg,a photo of a ewer,ewer
-data\images\ewer\image_0029.jpg,a photo of a ewer,ewer
-data\images\ewer\image_0034.jpg,a photo of a ewer,ewer
-data\images\ewer\image_0043.jpg,a photo of a ewer,ewer
-data\images\ewer\image_0053.jpg,a photo of a ewer,ewer
-data\images\ewer\image_0055.jpg,a photo of a ewer,ewer
-data\images\ewer\image_0080.jpg,a photo of a ewer,ewer
-data\images\scorpion\image_0002.jpg,a photo of a scorpion,scorpion
-data\images\scorpion\image_0004.jpg,a photo of a scorpion,scorpion
-data\images\scorpion\image_0005.jpg,a photo of a scorpion,scorpion
-data\images\scorpion\image_0006.jpg,a photo of a scorpion,scorpion
-data\images\scorpion\image_0013.jpg,a photo of a scorpion,scorpion
-data\images\scorpion\image_0015.jpg,a photo of a scorpion,scorpion
-data\images\scorpion\image_0016.jpg,a photo of a scorpion,scorpion
-data\images\scorpion\image_0038.jpg,a photo of a scorpion,scorpion
-data\images\scorpion\image_0047.jpg,a photo of a scorpion,scorpion
-data\images\scorpion\image_0069.jpg,a photo of a scorpion,scorpion
-data\images\starfish\image_0024.jpg,a photo of a starfish,starfish
-data\images\starfish\image_0026.jpg,a photo of a starfish,starfish
-data\images\starfish\image_0036.jpg,a photo of a starfish,starfish
-data\images\starfish\image_0040.jpg,a photo of a starfish,starfish
-data\images\starfish\image_0042.jpg,a photo of a starfish,starfish
-data\images\starfish\image_0046.jpg,a photo of a starfish,starfish
+data\images\dollar_bill\image_0025.jpg,a camera capture of a dollar bill,dollar_bill
+data\images\dollar_bill\image_0030.jpg,an image of a dollar bill,dollar_bill
+data\images\dollar_bill\image_0032.jpg,there is a dollar bill in this picture,dollar_bill
+data\images\dollar_bill\image_0045.jpg,a dollar bill seen up close,dollar_bill
+data\images\dollar_bill\image_0051.jpg,a view of a dollar bill,dollar_bill
+data\images\electric_guitar\image_0009.jpg,a close-up photo of an electric guitar,electric_guitar
+data\images\electric_guitar\image_0011.jpg,there is an electric guitar in this picture,electric_guitar
+data\images\electric_guitar\image_0023.jpg,an electric guitar in a photograph,electric_guitar
+data\images\electric_guitar\image_0026.jpg,a photograph featuring an electric guitar,electric_guitar
+data\images\electric_guitar\image_0032.jpg,an image of an electric guitar,electric_guitar
+data\images\electric_guitar\image_0033.jpg,this picture contains an electric guitar,electric_guitar
+data\images\electric_guitar\image_0038.jpg,a photo of an electric guitar,electric_guitar
+data\images\electric_guitar\image_0052.jpg,a clear shot of an electric guitar,electric_guitar
+data\images\electric_guitar\image_0068.jpg,a view of an electric guitar,electric_guitar
+data\images\electric_guitar\image_0069.jpg,an electric guitar seen up close,electric_guitar
+data\images\ewer\image_0008.jpg,a close-up photo of an ewer,ewer
+data\images\ewer\image_0011.jpg,an image of an ewer,ewer
+data\images\ewer\image_0014.jpg,a view of an ewer,ewer
+data\images\ewer\image_0019.jpg,a clear shot of an ewer,ewer
+data\images\ewer\image_0029.jpg,an ewer in a photograph,ewer
+data\images\ewer\image_0034.jpg,this picture contains an ewer,ewer
+data\images\ewer\image_0043.jpg,a photograph featuring an ewer,ewer
+data\images\ewer\image_0053.jpg,a picture showing an ewer,ewer
+data\images\ewer\image_0055.jpg,a camera capture of an ewer,ewer
+data\images\ewer\image_0080.jpg,there is an ewer in this picture,ewer
+data\images\scorpion\image_0002.jpg,a photograph featuring a scorpion,scorpion
+data\images\scorpion\image_0004.jpg,an image of a scorpion,scorpion
+data\images\scorpion\image_0005.jpg,a scorpion in a photograph,scorpion
+data\images\scorpion\image_0006.jpg,a close-up photo of a scorpion,scorpion
+data\images\scorpion\image_0013.jpg,a picture showing a scorpion,scorpion
+data\images\scorpion\image_0015.jpg,a camera capture of a scorpion,scorpion
+data\images\scorpion\image_0016.jpg,a view of a scorpion,scorpion
+data\images\scorpion\image_0038.jpg,there is a scorpion in this picture,scorpion
+data\images\scorpion\image_0047.jpg,a clear shot of a scorpion,scorpion
+data\images\scorpion\image_0069.jpg,this picture contains a scorpion,scorpion
+data\images\starfish\image_0024.jpg,a clear shot of a starfish,starfish
+data\images\starfish\image_0026.jpg,a starfish in a photograph,starfish
+data\images\starfish\image_0036.jpg,there is a starfish in this picture,starfish
+data\images\starfish\image_0040.jpg,an image of a starfish,starfish
+data\images\starfish\image_0042.jpg,a photograph featuring a starfish,starfish
+data\images\starfish\image_0046.jpg,a view of a starfish,starfish
 data\images\starfish\image_0057.jpg,a photo of a starfish,starfish
-data\images\starfish\image_0071.jpg,a photo of a starfish,starfish
-data\images\starfish\image_0072.jpg,a photo of a starfish,starfish
-data\images\starfish\image_0084.jpg,a photo of a starfish,starfish
-data\images\watch\image_0014.jpg,a photo of a watch,watch
-data\images\watch\image_0028.jpg,a photo of a watch,watch
-data\images\watch\image_0081.jpg,a photo of a watch,watch
-data\images\watch\image_0113.jpg,a photo of a watch,watch
-data\images\watch\image_0116.jpg,a photo of a watch,watch
-data\images\watch\image_0123.jpg,a photo of a watch,watch
-data\images\watch\image_0149.jpg,a photo of a watch,watch
-data\images\watch\image_0178.jpg,a photo of a watch,watch
-data\images\watch\image_0195.jpg,a photo of a watch,watch
-data\images\watch\image_0232.jpg,a photo of a watch,watch
+data\images\starfish\image_0071.jpg,a close-up photo of a starfish,starfish
+data\images\starfish\image_0072.jpg,a starfish seen up close,starfish
+data\images\starfish\image_0084.jpg,this picture contains a starfish,starfish
+data\images\watch\image_0014.jpg,a clear shot of a watch,watch
+data\images\watch\image_0028.jpg,a watch in a photograph,watch
+data\images\watch\image_0081.jpg,a close-up photo of a watch,watch
+data\images\watch\image_0113.jpg,an image of a watch,watch
+data\images\watch\image_0116.jpg,a photograph featuring a watch,watch
+data\images\watch\image_0123.jpg,a camera capture of a watch,watch
+data\images\watch\image_0149.jpg,a watch seen up close,watch
+data\images\watch\image_0178.jpg,there is a watch in this picture,watch
+data\images\watch\image_0195.jpg,this picture contains a watch,watch
+data\images\watch\image_0232.jpg,a picture showing a watch,watch
