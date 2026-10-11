@@ -1,6 +1,10 @@
+"""实验2入口：数据准备 → 双塔建模 → 对比训练 → 检索评估 → 保存投影层。
+
+在项目根目录运行：python main.py
+"""
 import sys
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).parent/"src"))
+sys.path.insert(0,str(Path(__file__).parent/"src"))   # 把 src 加入模块搜索路径
 
 import torch
 from torch.utils.data import DataLoader
