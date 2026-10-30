@@ -41,3 +41,27 @@ def encode_image(model,transform,image):
         emb=F.normalize(emb,dim=1,p=2)
     return emb[0]
     
+def encode_text(model,tokenizer,text,max_len=32):
+    """把一句文本编码成 256 维单位向量（查询侧）。
+
+    Args:
+        model: load_model 返回的 DualTowerModel（eval 模式）。
+        tokenizer: BertTokenizer，参数必须与训练时一致。
+        text: 查询字符串。
+        max_len: 截断/填充长度，必须与训练时一致（32）。
+    Returns:
+        形状 [256] 的 L2 归一化向量。
+    """
+    encoded=tokenizer(
+        text,
+        padding="max_length",
+        truncation=True,
+        max_length=max_len,
+        return_tensors="pt",
+    )
+    with torch.no_grad():
+        out=model.bert(input_ids=encoded["input_ids"],attention_mask=encoded["attention_mask"])
+        feat=out.last_hidden_state[:,0,:]
+        emb=model.proj_txt(feat)
+        emb=F.normalize(emb,dim=1,p=2)
+    return emb[0]
