@@ -1,6 +1,8 @@
 """查询侧编码模块：把用户输入的图片或文本变成 256 维单位向量。"""
 from src.model import load_resnet,load_bert,DualTowerModel
 import torch
+from torch.nn import functional as F
+
 
 def load_model(resnet_path,proj_path):
     """加载双塔模型：冻结编码器 + 训练好的投影层权重。
@@ -19,3 +21,23 @@ def load_model(resnet_path,proj_path):
     model.proj_txt.load_state_dict(ckpt["proj_txt"])
     model.eval()
     return model
+
+def encode_image(model,transform,image):
+    """把一张 PIL 图片编码成 256 维单位向量（查询侧）。
+
+    Args:
+        model: load_model 返回的 DualTowerModel（eval 模式）。
+        transform: get_image_transform() 返回的预处理流水线，必须与图库侧是同一个。
+        image: PIL.Image 对象。
+    Returns:
+        形状 [256] 的 L2 归一化向量。
+    """
+    image=image.convert("RGB")
+    with torch.no_grad():
+        x=transform(image)
+        x=x.unsqueeze(0)
+        feat=model.resnet(x)
+        emb=model.proj_img(feat)
+        emb=F.normalize(emb,dim=1,p=2)
+    return emb[0]
+    
