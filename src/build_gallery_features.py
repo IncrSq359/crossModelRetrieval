@@ -2,7 +2,8 @@
 import csv
 from pathlib import Path
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset,DataLoader
+import torch
 
 def list_gallery_images(csv_path):
     """从标注 CSV 中按首次出现顺序取出不重复的图片文件名及其划分。
@@ -47,3 +48,22 @@ class GalleryImageDataset(Dataset):
         image_path = self.images_dir/self.filenames[idx]           
         image = Image.open(image_path).convert("RGB") 
         return self.transform(image)   
+
+def extract_features(resnet, dataset, batch_size=32, num_workers=0):
+    """批量提取图库图片的 ResNet 原始特征。
+
+    Args:
+        resnet: load_resnet 返回的冻结 ResNet（输出 2048 维）。
+        dataset: GalleryImageDataset，顺序即特征矩阵的行顺序。
+        batch_size: 每批图片数。
+        num_workers: 读图子进程数，0 表示在主进程中读。
+    Returns:
+        特征矩阵 [N, 2048]，第 i 行对应 dataset 的第 i 张图。
+    """
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    chunks = []
+    with torch.no_grad():
+        for images in loader:
+            feat = resnet(images)
+            chunks.append(feat)
+    return torch.cat(chunks, dim=0)
