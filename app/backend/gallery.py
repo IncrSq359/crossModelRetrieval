@@ -15,3 +15,13 @@ def load_captions(csv_path):
         for row in reader:
             captions.setdefault(row["filename"],[]).append(row["caption"])
     return captions
+
+def build_filename_index(filenames):
+    """建立 文件名 -> 特征矩阵行号 的映射。
+
+    Args:
+        filenames: 文件名列表，第 i 个元素对应特征矩阵第 i 行。
+    Returns:
+        dict：键是文件名，值是行号（从 0 开始）。
+    """
+    return {fn : i for i, fn in enumerate(filenames)}
