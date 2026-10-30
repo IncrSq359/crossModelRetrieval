@@ -1,0 +1,33 @@
+# ---- Python ----
+# Python 运行时自动生成的字节码缓存文件夹
+__pycache__/
+# 匹配 .pyc / .pyo / .pyd 等编译产物
+*.py[cod]
+# 包安装信息
+*.egg-info/
+# 虚拟环境（两种常见命名都忽略）
+.venv/
+venv/
+
+# ---- 数据：Flickr30k 体量很大（压缩包约 4.4GB + 解压图片约 4.4GB），一律不入库 ----
+# /data/raw/ 存放原始下载物（压缩包、官方标注 CSV、解压图片、预训练权重缓存）
+/data/raw/*
+!/data/raw/.gitkeep
+# /data/annotations/ 存放由脚本派生出的标准化标注（可由脚本重新生成）
+/data/annotations/*
+!/data/annotations/.gitkeep
+
+# ---- 实验输出（缓存特征、Faiss 索引、评测结果等产物）----
+output/
+
+# ---- 个人学习笔记（不纳入版本管理）----
+学习笔记.md
+
+# ---- 其他实验的课程 PDF（不属于 exp3）----
+/*.pdf
+
+# ---- 编辑器 / 系统文件 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
