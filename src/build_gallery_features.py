@@ -4,6 +4,8 @@ from pathlib import Path
 from PIL import Image
 from torch.utils.data import Dataset,DataLoader
 import torch
+from preprocess import get_image_transform
+from model import load_resnet
 
 def list_gallery_images(csv_path):
     """从标注 CSV 中按首次出现顺序取出不重复的图片文件名及其划分。
@@ -67,3 +69,29 @@ def extract_features(resnet, dataset, batch_size=32, num_workers=0):
             feat = resnet(images)
             chunks.append(feat)
     return torch.cat(chunks, dim=0)
+
+def main(limit=None):
+    """脚本入口：提取图库全部特征，并按契约格式保存。
+
+    Args:
+        limit: 只处理前 limit 张图，用于快速测试；None 表示全部。
+    """
+    csv_path = "data/annotations/captions_flickr30k.csv"
+    images_dir = "data/raw/flickr30k/flickr30k-images"
+    resnet_path = "data/raw/resnet50_timm.pth"
+    out_path = Path("output/features/image_features.pth")
+
+    filenames, splits = list_gallery_images(csv_path)
+    if limit is not None:            
+        filenames, splits = filenames[:limit], splits[:limit]
+    dataset = GalleryImageDataset(images_dir, filenames, get_image_transform())
+    resnet = load_resnet(resnet_path)
+    features = extract_features(resnet, dataset, batch_size=32)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save({"features": features, "filenames": filenames, "splits": splits}, out_path)
+    print("saved:", features.shape, "->", out_path)
+
+
+if __name__ == "__main__":
+    main()
