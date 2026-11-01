@@ -20,8 +20,8 @@ def main():
     dataset=ImageDataset(records,transform)
 
     img_features,img_labels,img_paths=extract_image_features(dataset)
-    save_image_features(img_features,img_labels,img_paths,"output/features/image_features.pth")
-    img_features2,img_labels2,_=load_image_features("output/features/image_features.pth")
+    save_image_features(img_features,img_labels,img_paths,"output/features/convnext_image_features.pth")
+    img_features2,img_labels2,_=load_image_features("output/features/convnext_image_features.pth")
 
     #text
     texts,txt_labels,txt_paths=load_captions("data/texts/captions.csv")
