@@ -2,11 +2,13 @@
 
 from os import path
 from pathlib import Path
+from anyio.lowlevel import checkpoint
+from numpy import identity
 from torch.utils.data import Dataset,DataLoader
 from PIL import Image
 import torch
-from torchvision import models
 import torch.nn as nn
+from model.ConvnextFixed import ConvNeXt
 
 class ImageDataset(Dataset):
     """图像数据集：按索引懒加载图片、做预处理并返回张量。
@@ -38,21 +40,22 @@ class ImageDataset(Dataset):
         img=Image.open(rec["path"]).convert('RGB')
         tensor=self.transform(img)
         return tensor ,rec["label"],str(rec["path"])
-    
-def load_resnet():
-    """加载本地权重的 ResNet-50，并改造成特征提取器。
 
-    去掉最后的全连接分类层(fc)，替换为 Identity（原样输出），
-    这样模型输出的是倒数第二层 2048 维特征向量，而非1000类分数。
-
-    Returns:
-        处于评估模式(eval)的 ResNet-50 模型，输出 [批次, 2048]。
-    """
-    model=models.resnet50(weights=None)
-    state_dict=torch.load("data/raw/resnet50_timm.pth",
-                          map_location="cpu",weights_only=True)
-    model.load_state_dict(state_dict)
-    model.fc=nn.Identity()
+def load_convnext():
+    model=ConvNeXt(out_class=1000) 
+    checkpoint= torch.load(
+        "data/raw/convnext_tiny_1k_224_ema.pth",
+        map_location="cpu",
+        weights_only=True,
+    )
+    if "model" in checkpoint:
+        static_dict=checkpoint[model]
+    elif "state_dicy" in checkpoint:
+        static_dict=checkpoint["static_dict"]
+    else:
+        static_dict=checkpoint,
+    model.load_state_dict(static_dict,strict=True)
+    model.head=nn.identity()
     model.eval()
     return model
         
@@ -70,7 +73,7 @@ def extract_image_features(dataset,batch_size=32):
         paths: 图片路径列表（与特征逐行对应）。
     """
     loader = DataLoader(dataset,batch_size=batch_size,shuffle=False)
-    model = load_resnet()
+    model = load_convnext()
     all_features=[]
     all_labels=[]
     all_paths=[]
