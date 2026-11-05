@@ -2,6 +2,7 @@
 
 from email.policy import default
 from pathlib import Path
+from unittest import result
 from pydantic import BaseModel
 from app.backend import retriever
 
@@ -88,3 +89,32 @@ def health():
     n = state["emb_img"].shape[0]
     dim = state["emb_img"].shape[1]
     return {"index_size": n, "dim": dim, "retriever": "brute"}
+
+
+def build_response(q_vec, top_k, t0):
+    """由查询向量得到完整响应（文本搜图、图搜图共用）。
+
+    Args:
+        q_vec: 已投影并 L2 归一化的查询向量，形状 [256]。
+        top_k: 返回条数。
+        t0: 请求开始时间，由 time.perf_counter() 得到。
+
+    Returns:
+        符合接口契约的字典。
+    """
+    idx, scores = state["retriever"].search_vector(q_vec, top_k)
+    idx = idx.tolist()
+    scores = scores.tolist()
+    results = []
+    for i, s in zip(idx, scores):
+        fn = state["filenames"][i]
+        results.append(
+            {
+                "filename": fn,
+                "score": round(s, 4),
+                "url": f"/images/{fn}",
+                "captions": state["captions"][fn],
+            }
+        )
+    latency_ms = round((time.perf_counter() - t0) * 1000, 1)
+    return {"latency_ms": latency_ms, "retriever": "brute", "results": results}
