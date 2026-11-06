@@ -158,3 +158,7 @@ async def search_image(file: UploadFile = File(...), top_k: int = 20):
 
 
 app.mount("/images", StaticFiles(directory=IMAGE_DIR))
+
+FRONTEND_DIR=Path(__file__).resolve().parent.parent/"frontend"
+
+app.mount("/",StaticFiles(directory=FRONTEND_DIR,html=True),name="frontend")
