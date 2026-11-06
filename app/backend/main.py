@@ -1,5 +1,6 @@
 """后端入口：FastAPI 应用，定义对外的 HTTP 接口。"""
 
+from os import read
 from pathlib import Path
 from pydantic import BaseModel
 
@@ -19,6 +20,7 @@ import io
 from app.backend.encoder import load_model, encode_image, encode_text
 from app.backend.gallery import load_captions, build_filename_index, project_gallery
 from app.backend.retriever import BruteForceRetriever
+from src.preprocess import get_image_transform
 from transformers import BertTokenizer
 
 # 全局容器：启动时填充，请求时读取
@@ -39,6 +41,9 @@ async def lifespan(app: FastAPI):
     state["model"] = model
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     state["tokenizer"] = tokenizer
+
+    transform = get_image_transform()
+    state["transform"] = transform
 
     FEATURE_PATH = ROOT / "output" / "features" / "image_features.pth"
     data = torch.load(FEATURE_PATH)
@@ -133,4 +138,23 @@ def search_txt(body: TextQuery):
     q_vec = encode_text(state["model"], state["tokenizer"], body.query)
     return build_response(q_vec, body.top_k, t0)
 
-app.mount("/images",StaticFiles(directory=IMAGE_DIR))
+
+@app.post("/api/search/image")
+async def search_image(file: UploadFile = File(...), top_k: int = 20):
+    """以图搜图：上传一张图片，返回最相似的图片。
+
+    Args:
+        file: 上传的图片文件（jpg 或 png）。
+        top_k: 返回条数，默认 20。
+
+    Returns:
+        build_response 组装好的字典。
+    """
+    t0 = time.perf_counter()
+    raw = await file.read()
+    img = Image.open(io.BytesIO(raw)).convert("RGB")
+    q_vec = encode_image(state["model"], state["transform"], img)
+    return build_response(q_vec, top_k, t0)
+
+
+app.mount("/images", StaticFiles(directory=IMAGE_DIR))
