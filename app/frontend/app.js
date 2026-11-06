@@ -24,12 +24,7 @@ searchBtn.addEventListener("click", async () => {
         renderStatus(data);
     }
     catch (error) {
-        if (error instanceof Error) {
-            renderError(error.message);
-        }
-        else {
-            renderError(String(error));
-        }
+        handleError(error);
     }
 });
 const resultsBox = document.getElementById("results");
@@ -72,6 +67,14 @@ function renderError(message) {
     }
     statusBar.textContent = "出错了:" + message;
 }
+function handleError(error) {
+    if (error instanceof Error) {
+        renderError(error.message);
+    }
+    else {
+        String(error);
+    }
+}
 async function searchByImage(file) {
     const formData = new FormData();
     formData.append("file", file);
@@ -96,11 +99,6 @@ imageInput.addEventListener("change", async () => {
         renderStatus(data);
     }
     catch (error) {
-        if (error instanceof Error) {
-            renderError(error.message);
-        }
-        else {
-            renderError(String(error));
-        }
+        handleError(error);
     }
 });

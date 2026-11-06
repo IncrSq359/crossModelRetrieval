@@ -28,7 +28,7 @@ async function searchByText(query: string): Promise<SearchResponse> {
     if (!response.ok) {
         throw new Error(`请求失败:${response.status}`);
     }
-    return await response.json()
+    return await response.json() as SearchResponse;
 }
 
 searchBtn.addEventListener("click", async () => {
@@ -38,11 +38,7 @@ searchBtn.addEventListener("click", async () => {
         renderResults(data);
         renderStatus(data);
     } catch (error) {
-        if (error instanceof Error) {
-            renderError(error.message)
-        } else {
-            renderError(String(error));
-        }
+        handleError(error);
     }
 });
 
@@ -94,6 +90,14 @@ function renderError(message: string): void{
     statusBar.textContent = "出错了:" + message;
 }
 
+function handleError(error: unknown): void{
+    if (error instanceof Error) {
+        renderError(error.message);
+    } else {
+        String(error);
+    }
+}
+
 async function searchByImage(file:File):Promise<SearchResponse> {
     const formData = new FormData();
     formData.append("file", file);
@@ -118,10 +122,6 @@ imageInput.addEventListener("change", async () => {
         renderResults(data);
         renderStatus(data);
     } catch (error) {
-        if (error instanceof Error) {
-            renderError(error.message);
-        } else {
-            renderError(String(error));
-        }
+        handleError(error);
     }
 });
