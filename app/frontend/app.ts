@@ -67,3 +67,27 @@ function renderStatus(data: SearchResponse): void{
     statusBar.textContent =
     "耗时：" + data.latency_ms + " ms　检索后端：" + data.retriever + "　结果数：" + data.results.length;
 }
+
+async function searchByImage(file:File):Promise<SearchResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const resp = await fetch("/api/search/image", {
+        method: "POST",
+        body: formData,
+    });
+    if (!resp.ok) {
+        throw new Error(`请求失败:${resp.status}`);
+    }
+    return (await resp.json()) as SearchResponse;
+}
+
+const imageInput = document.getElementById("image-file") as HTMLInputElement;
+imageInput.addEventListener("change", async () => {
+    const file = imageInput.files?.[0];
+    if (file === undefined) {
+        return;
+    }
+    const data =await searchByImage(file);
+    renderResults(data);
+    renderStatus(data);
+})
