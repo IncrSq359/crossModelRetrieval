@@ -1,10 +1,7 @@
 """后端入口：FastAPI 应用，定义对外的 HTTP 接口。"""
 
-from email.policy import default
 from pathlib import Path
-from unittest import result
 from pydantic import BaseModel
-from app.backend import retriever
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -14,13 +11,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.staticfiles import StaticFiles
+
+IMAGE_DIR = ROOT / "data" / "raw" / "flickr30k" / "flickr30k-images"
 from PIL import Image
 import io
 
 from app.backend.encoder import load_model, encode_image, encode_text
 from app.backend.gallery import load_captions, build_filename_index, project_gallery
 from app.backend.retriever import BruteForceRetriever
-from transformers import BertTokenizer, T5Tokenizer
+from transformers import BertTokenizer
 
 # 全局容器：启动时填充，请求时读取
 state = {}
@@ -119,8 +118,9 @@ def build_response(q_vec, top_k, t0):
     latency_ms = round((time.perf_counter() - t0) * 1000, 1)
     return {"latency_ms": latency_ms, "retriever": "brute", "results": results}
 
+
 @app.post("/api/search/text")
-def search_txt(body:TextQuery):
+def search_txt(body: TextQuery):
     """以文搜图：输入一句文本，返回最相似的图片。
 
     Args:
@@ -129,6 +129,8 @@ def search_txt(body:TextQuery):
     Returns:
         build_response 组装好的字典。
     """
-    t0=time.perf_counter()
-    q_vec=encode_text(state["model"],state["tokenizer"],body.query)
-    return build_response(q_vec,body.top_k,t0)
+    t0 = time.perf_counter()
+    q_vec = encode_text(state["model"], state["tokenizer"], body.query)
+    return build_response(q_vec, body.top_k, t0)
+
+app.mount("/images",StaticFiles(directory=IMAGE_DIR))
