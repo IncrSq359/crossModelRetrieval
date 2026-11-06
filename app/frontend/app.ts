@@ -3,11 +3,6 @@ const searchBtn = document.getElementById("btn-search-text");
 if (searchBtn === null) {
     throw new Error("找不到搜索按钮，检查id");
 }
-searchBtn.addEventListener("click", () => {
-    const query: string = textInput.value;
-    console.log("用户输入：", query);
-});
-
 // 一条检索结果（字段和后端 API 契约一致）
 interface SearchResult{
     filename: string;
@@ -36,6 +31,39 @@ async function searchByText(query: string): Promise<SearchResponse> {
 searchBtn.addEventListener("click", async () => {
     const query: string = textInput.value;
     const data = await searchByText(query);
-    console.log("检索结果：", data);
+    renderResults(data);
+    renderStatus(data);
 })
 
+const resultsBox = document.getElementById("results");
+
+function renderResults(data: SearchResponse): void{
+    if (resultsBox === null) {
+        throw new Error("找不到结果容器，检查id");
+    }
+    resultsBox.innerHTML = "";
+    for (const item of data.results) {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const img = document.createElement("img");
+        img.src = item.url;
+        img.alt = item.filename;
+
+        const score = document.createElement("p");
+        score.textContent = "相似度：" + item.score.toFixed(4);
+
+        card.appendChild(img);
+        card.appendChild(score);
+        resultsBox.appendChild(card);
+    }
+}
+
+const statusBar = document.getElementById("status-bar");
+function renderStatus(data: SearchResponse): void{
+    if (statusBar === null) {
+        throw new Error("找不到状态栏，检查id");
+    }
+    statusBar.textContent =
+    "耗时：" + data.latency_ms + " ms　检索后端：" + data.retriever + "　结果数：" + data.results.length;
+}
