@@ -52,9 +52,17 @@ function renderResults(data: SearchResponse): void{
 
         const score = document.createElement("p");
         score.textContent = "相似度：" + item.score.toFixed(4);
+        
+        const captionList = document.createElement("ul");
+        for (const caption of item.captions) {
+            const li = document.createElement("li");
+            li.textContent = caption;
+            captionList.appendChild(li);
+        }
 
         card.appendChild(img);
         card.appendChild(score);
+        card.appendChild(captionList);
         resultsBox.appendChild(card);
     }
 }

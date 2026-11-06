@@ -33,8 +33,15 @@ function renderResults(data) {
         img.alt = item.filename;
         const score = document.createElement("p");
         score.textContent = "相似度：" + item.score.toFixed(4);
+        const captionList = document.createElement("ul");
+        for (const caption of item.captions) {
+            const li = document.createElement("li");
+            li.textContent = caption;
+            captionList.appendChild(li);
+        }
         card.appendChild(img);
         card.appendChild(score);
+        card.appendChild(captionList);
         resultsBox.appendChild(card);
     }
 }
@@ -60,10 +67,10 @@ async function searchByImage(file) {
 }
 const imageInput = document.getElementById("image-file");
 imageInput.addEventListener("change", async () => {
-    if (imageInput.files === null) {
+    const file = imageInput.files?.[0];
+    if (file === undefined) {
         return;
     }
-    const file = imageInput.files[0];
     const data = await searchByImage(file);
     renderResults(data);
     renderStatus(data);
