@@ -1,4 +1,4 @@
-"""预处理模块：构建图像预处理流水线，供 ResNet 使用。"""
+"""预处理模块：构建图像预处理流水线，供 Convnext 使用。"""
 
 from torchvision import transforms
 
@@ -10,7 +10,7 @@ def get_image_transform():
 
     依次执行：缩放到短边256 → 中心裁剪224×224 → 转成张量 →
     按 ImageNet 的均值/标准差做归一化。归一化后的数据分布
-    与 ResNet 训练时一致，特征质量才有保证。
+    与 Convnext 训练时一致，特征质量才有保证。
 
     Returns:
         torchvision.transforms.Compose 流水线；调用时传入 PIL 图像即可得到张量。
