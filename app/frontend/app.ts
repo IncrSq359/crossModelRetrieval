@@ -102,7 +102,14 @@ function closeLightbox(): void{
     }
     lightbox.classList.remove("show");
 }
+
 lightbox?.addEventListener("click", closeLightbox);
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        closeLightbox();
+    }
+});
 
 function renderError(message: string): void{
     if (statusBar === null) {
@@ -115,7 +122,7 @@ function handleError(error: unknown): void{
     if (error instanceof Error) {
         renderError(error.message);
     } else {
-        String(error);
+        renderError(String(error));
     }
 }
 

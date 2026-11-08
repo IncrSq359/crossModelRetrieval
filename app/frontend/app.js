@@ -80,6 +80,11 @@ function closeLightbox() {
     lightbox.classList.remove("show");
 }
 lightbox?.addEventListener("click", closeLightbox);
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        closeLightbox();
+    }
+});
 function renderError(message) {
     if (statusBar === null) {
         throw new Error("找不到状态栏，检查id");
@@ -91,7 +96,7 @@ function handleError(error) {
         renderError(error.message);
     }
     else {
-        String(error);
+        renderError(String(error));
     }
 }
 async function searchByImage(file) {
