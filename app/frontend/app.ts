@@ -56,6 +56,9 @@ function renderResults(data: SearchResponse): void{
         const img = document.createElement("img");
         img.src = item.url;
         img.alt = item.filename;
+        img.addEventListener("click", () => {
+            openLightbox(item.url);
+        })
 
         const score = document.createElement("p");
         score.textContent = "相似度：" + item.score.toFixed(4);
@@ -82,6 +85,24 @@ function renderStatus(data: SearchResponse): void{
     statusBar.textContent =
     "耗时：" + data.latency_ms + " ms　检索后端：" + data.retriever + "　结果数：" + data.results.length;
 }
+
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightbox-img") as HTMLImageElement;
+function openLightbox(url: string): void{
+    if (lightbox === null) {
+        throw new Error("找不到灯箱，检查id");
+    }
+    lightboxImg.src = url;
+    lightbox.classList.add("show");
+}
+
+function closeLightbox(): void{
+    if (lightbox === null) {
+        throw new Error("找不到灯箱，检查id");
+    }
+    lightbox.classList.remove("show");
+}
+lightbox?.addEventListener("click", closeLightbox);
 
 function renderError(message: string): void{
     if (statusBar === null) {
