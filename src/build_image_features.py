@@ -3,6 +3,8 @@ import csv
 from pathlib import Path
 from PIL import Image
 from torch.utils.data import Dataset
+import torch
+from torch.utils.data import DataLoader
 
 PROJECT_ROOT=Path(__file__).resolve().parents[1]
 CSV_PATH=PROJECT_ROOT/"data"/"annotations"/"captions_flickr30k.csv"
@@ -51,6 +53,26 @@ class ImageDataset(Dataset):
         image=Image.open(image_path).convert("RGB")
         return self.transform(image)
         
+def extract_image_features(model,dataset,batch_size=32):
+    """用冻结的 ConvNeXt 批量提取图像特征。
+
+    Args:
+        model: load_convnext 返回的冻结图像编码器，输出 [B, 768]。
+        dataset: ImageDataset，每个样本是 [3, 224, 224] 的张量。
+        batch_size: 每批图片数。
+    Returns:
+        特征矩阵 [len(dataset), 768]，行顺序与 dataset 中的图片顺序一致。
+    """
+    loader= DataLoader(dataset,batch_size=batch_size,shuffle=False)
+    all_feats=[]
+    with torch.no_grad():
+        for i,images in enumerate(loader):
+            feats=model(images)
+            all_feats.append(feats)
+            if i%20==0:
+                print("已处理批数：",i,"/",len(loader))
+    return torch.cat(all_feats,dim=0)
+
 if __name__=="__main__":
     filenames,splits=load_unique_images(CSV_PATH)
     print("图片数：", len(filenames))
@@ -58,4 +80,9 @@ if __name__=="__main__":
     from preprocess import get_image_transform
     ds = ImageDataset(filenames, IMAGES_DIR, get_image_transform())
     print(len(ds), ds[0].shape)
-    
+    from torch.utils.data import Subset
+    from model import load_convnext
+    model = load_convnext(PROJECT_ROOT / "data" / "raw" / "convnext_tiny_1k_224_ema.pth")
+    small = Subset(ds, range(64))          # 只取前 64 张
+    feats = extract_image_features(model, small, batch_size=32)
+    print(feats.shape, feats.isnan().any())
