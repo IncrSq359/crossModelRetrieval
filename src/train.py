@@ -20,6 +20,8 @@ def train(model,loader,num_epoches=30,lr=1e-3):
     trainable_params=[p for p in model.parameters() if  p.requires_grad]  # 只保留投影层参数
     optimizer=torch.optim.Adam(trainable_params,lr=lr)
     model.train()
+    model.convnext.eval()
+    model.bert.eval()
     loss_history=[]
     for epoch in range(num_epoches):
         epoch_loss=0.0
