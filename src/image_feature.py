@@ -1,14 +1,11 @@
-"""图像特征模块：用预训练 ResNet-50 把图片编码成 2048 维特征，并负责存取。"""
+"""图像特征模块：用预训练 Convnext 把图片编码成 768 维特征，并负责存取。"""
 
-from os import path
 from pathlib import Path
-from anyio.lowlevel import checkpoint
-from numpy import identity
 from torch.utils.data import Dataset,DataLoader
 from PIL import Image
 import torch
 import torch.nn as nn
-from model.ConvnextFixed import ConvNeXt
+from Convnext import ConvNeXt
 
 class ImageDataset(Dataset):
     """图像数据集：按索引懒加载图片、做预处理并返回张量。
@@ -49,13 +46,13 @@ def load_convnext():
         weights_only=True,
     )
     if "model" in checkpoint:
-        static_dict=checkpoint[model]
-    elif "state_dicy" in checkpoint:
-        static_dict=checkpoint["static_dict"]
+        static_dict=checkpoint["model"]
+    elif "state_dict" in checkpoint:
+        static_dict=checkpoint["state_dict"]
     else:
-        static_dict=checkpoint,
+        static_dict=checkpoint
     model.load_state_dict(static_dict,strict=True)
-    model.head=nn.identity()
+    model.head=nn.Identity()
     model.eval()
     return model
         
