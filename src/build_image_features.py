@@ -1,6 +1,8 @@
 """提取 Flickr30k 全部图像的 ConvNeXt 特征并缓存到磁盘。"""
+from ast import Dict
 import csv
 from pathlib import Path
+from sys import path
 from PIL import Image
 from torch.utils.data import Dataset
 import torch
@@ -69,20 +71,35 @@ def extract_image_features(model,dataset,batch_size=32):
         for i,images in enumerate(loader):
             feats=model(images)
             all_feats.append(feats)
-            if i%20==0:
-                print("已处理批数：",i,"/",len(loader))
+            if (i+1)%20==0:
+                print("已处理批数：",i+1,"/",len(loader))
     return torch.cat(all_feats,dim=0)
+    
+def save_features(features, filenames, splits, out_path):
+    """把特征矩阵和对应的元信息一起保存。
 
+    Args:
+        features: 特征矩阵 [N, 768]。
+        filenames: 与矩阵行一一对应的文件名列表。
+        splits: 与矩阵行一一对应的划分列表。
+        out_path: 输出文件路径（.pth）。
+    """
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)   # 目录不存在就创建
+    torch.save({"features":features,"filenames":filenames,"splits":splits
+        },
+        out_path)
+    
 if __name__=="__main__":
-    filenames,splits=load_unique_images(CSV_PATH)
-    print("图片数：", len(filenames))
-    print("前3张：", filenames[:3], splits[:3])
     from preprocess import get_image_transform
-    ds = ImageDataset(filenames, IMAGES_DIR, get_image_transform())
-    print(len(ds), ds[0].shape)
-    from torch.utils.data import Subset
     from model import load_convnext
-    model = load_convnext(PROJECT_ROOT / "data" / "raw" / "convnext_tiny_1k_224_ema.pth")
-    small = Subset(ds, range(64))          # 只取前 64 张
-    feats = extract_image_features(model, small, batch_size=32)
-    print(feats.shape, feats.isnan().any())
+    
+    filenames,splits=load_unique_images(CSV_PATH)
+    ds=ImageDataset(filenames,IMAGES_DIR,get_image_transform())
+    model=load_convnext(PROJECT_ROOT/"data"/"raw"/"convnext_tiny_1k_224_ema.pth")
+    
+    feats=extract_image_features(model,ds)
+    print("特征形状：",feats.shape)
+    
+    out_path=PROJECT_ROOT/"output"/"features"/"image_features.pth"
+    save_features(feats,filenames,splits,out_path)
