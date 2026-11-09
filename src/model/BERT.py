@@ -26,6 +26,6 @@ class BERT(nn.Module):
         x = self.embedding(x)
         mask = mask.unsqueeze(2)
         for layer in self.layers:
-            x = layer.forward(x,mask)
+            x = layer(x,mask)
         return x
         
