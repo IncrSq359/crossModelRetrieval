@@ -8,8 +8,8 @@ os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")   # 下载时走�
 os.environ["HF_HUB_OFFLINE"] = "1"                             # 模型已下全，直接读缓存、不联网
 
 import torch
-from transformers import BertModel
-from transformers import BertTokenizer
+from transformers import BertModel #可删
+from transformers import BertTokenizer #保留
 
 def load_captions(csv_path):
     """读取 captions.csv，取出文本、标签和图片路径。
@@ -53,6 +53,7 @@ def extract_text_features(texts,max_length=16):
     """
     tokenizer=BertTokenizer.from_pretrained("bert-base-uncased")
     model=load_bert()
+    # encoded保留,其中encoded["input_ids"]和encoded["attention_mask"]作为模型输入
     encoded=tokenizer(
         texts,
         padding="max_length",
