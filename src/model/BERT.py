@@ -1,7 +1,8 @@
 from utils.transformer_encoder import transformer_encoder as encoder
 from utils.embedding import embedding
 import torch
-from torch import nn,Tensor
+from torch import nn, Tensor
+
 
 class BERT(nn.Module):
     """BERT模型\n
@@ -14,18 +15,18 @@ class BERT(nn.Module):
         L (int): encoder层数
         H (int): 注意力头
     """
-    def __init__(self,num,dim,L,H,dropout):
+
+    def __init__(self, num, dim, L, H, dropout):
         super().__init__()
-        self.embedding = embedding(num,dim,dropout)
+        self.embedding = embedding(num, dim, dropout)
         self.layers = nn.ModuleList()
-        ffn = 4*dim
-        for i in range(0,L):
-            self.layers.append(encoder(dim,H,ffn,dropout))
-        
-    def forward(self,x:Tensor,mask:Tensor):
+        ffn = 4 * dim
+        for i in range(0, L):
+            self.layers.append(encoder(dim, H, ffn, dropout))
+
+    def forward(self, x: Tensor, mask: Tensor):
         x = self.embedding(x)
-        mask = mask.unsqueeze(2)
+        mask = mask.unsqueeze(1)
         for layer in self.layers:
-            x = layer(x,mask)
+            x = layer(x, mask)
         return x
-        

@@ -10,7 +10,7 @@ class layer_norm(nn.Module):
         eps
     """
 
-    def __init__(self, dim,features, eps=1e-6):
+    def __init__(self, dim,features, eps=1e-12):
         super().__init__()
         self.dim = dim
         self.weight = nn.Parameter(torch.ones(features))
