@@ -8,7 +8,8 @@ os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")   # 下载时走�
 os.environ["HF_HUB_OFFLINE"] = "1"                             # 模型已下全，直接读缓存、不联网
 
 import torch
-from transformers import BertModel #可删
+from model.BERT import BERT
+from model.load_bert_weights import load_hf_weights
 from transformers import BertTokenizer #保留
 
 def load_captions(csv_path):
@@ -32,14 +33,16 @@ def load_captions(csv_path):
     return texts,labels,image_paths
 
 def load_bert():
-    """加载预训练 BERT 模型并设为评估模式。
+    """加载手写 BERT，并装入 bert-base-uncased 的预训练权重。
 
     Returns:
-        处于 eval 模式的 BertModel。
+        处于 eval 模式的手写 BERT。
     """
-    model=BertModel.from_pretrained("bert-base-uncased")
-    model.eval()
-    return model
+    # 按 bert-base-uncased 的规格创建手写 BERT：词典 30522、维度 768、12 层、12 个头
+    # dropout 填 0.1，推理时 eval() 会把它关掉
+    my_bert = BERT(num=30522, dim=768, L=12, H=12, dropout=0.1)
+    # 装入预训练权重，函数内部已经调用了 eval()
+    return load_hf_weights(my_bert)
 
 def extract_text_features(texts,max_length=16):
     """把一批句子编码成 BERT 的 CLS 句向量。
@@ -62,11 +65,8 @@ def extract_text_features(texts,max_length=16):
         return_tensors="pt",
     )
     with torch.no_grad():
-        output=model(
-            input_ids=encoded["input_ids"],
-            attention_mask=encoded["attention_mask"],
-        )
-    features=output.last_hidden_state[:,0,:]
+        output=model(encoded["input_ids"],encoded["attention_mask"])
+    features=output[:,0,:]
     return features
 
 def save_features(feature_matrix,labels,paths,save_path):
