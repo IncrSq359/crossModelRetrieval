@@ -4,14 +4,21 @@
 投影结果做 L2 归一化，使点积等于余弦相似度。编码器全程冻结，
 训练时只有两个投影层的参数更新。
 """
+
 import os
-os.environ["HF_HUB_OFFLINE"]="1"   # 必须在 import transformers 之前设置：库在导入时读一次环境变量并记死
+
+os.environ["HF_HUB_OFFLINE"] = (
+    "1"  # 必须在 import transformers 之前设置：库在导入时读一次环境变量并记死
+)
 
 import torch
 from torch import nn
-from transformers import BertModel
+from transformers import BertTokenizer
+from .bert_model.BERT import BERT
+from .bert_model.load_bert_weights import load_hf_weights
 from torch.nn import functional as F
 from Convnext import ConvNeXt
+
 
 def load_convnext(weights_path):
     """加载本地权重的 ConvNeXt-T，改造成 768 维特征提取器并冻结。
@@ -21,33 +28,31 @@ def load_convnext(weights_path):
     Returns:
         冻结且处于 eval 模式的 ConvNeXt-T，输出 [B, 768]。
     """
-    net=ConvNeXt(out_class=1000)
-    ckpt=torch.load(weights_path,map_location="cpu",weights_only=True)
+    net = ConvNeXt(out_class=1000)
+    ckpt = torch.load(weights_path, map_location="cpu", weights_only=True)
     if "model" in ckpt:
-        state=ckpt["model"]
+        state = ckpt["model"]
     elif "state_dict" in ckpt:
-        state=ckpt["state_dict"]
+        state = ckpt["state_dict"]
     else:
-        state=ckpt
-    net.load_state_dict(state,strict=True)
-    net.head=nn.Identity()
+        state = ckpt
+    net.load_state_dict(state, strict=True)
+    net.head = nn.Identity()
     for p in net.parameters():
-        p.requires_grad=False
+        p.requires_grad = False
     net.eval()
     return net
 
+
 def load_bert():
-    """加载 bert-base-uncased 并冻结，作为 768 维文本编码器。
+    """加载手写 BERT 并载入 bert-base-uncased 预训练权重，冻结后作为 768 维文本编码器。
 
     Returns:
-        冻结且处于 eval 模式的 BertModel；前向时取 CLS 位置向量，
-        输出 [B, 768]。
+        冻结且处于 eval 模式的手写 BERT；输出取 CLS 位置向量，[B, 768]。
     """
-    bert=BertModel.from_pretrained("bert-base-uncased")
-    bert.eval()
-    for p in bert.parameters():
-        p.requires_grad=False
-    return bert
+    bert = BERT(30522, 768, 12, 12, 0.1)
+    load_hf_weights()
+
 
 class DualTowerModel(nn.Module):
     """双塔模型：图像塔和文本塔各接一个可训练投影层。
@@ -56,7 +61,7 @@ class DualTowerModel(nn.Module):
     ConvNeXt 与 BERT 仅作固定特征提取器。
     """
 
-    def __init__(self,convnext,bert,embed_dim=256):
+    def __init__(self, convnext, bert, embed_dim=256):
         """
         Args:
             convnext: load_convnext 返回的冻结图像编码器（输出768维）。
@@ -64,13 +69,13 @@ class DualTowerModel(nn.Module):
             embed_dim: 共享空间维度，默认256。
         """
         super().__init__()
-        self.convnext=convnext
-        self.bert=bert
-        self.embed_dim=embed_dim
-        self.proj_img=nn.Linear(768,embed_dim)   # 图像投影层（可训练）
-        self.proj_txt=nn.Linear(768,embed_dim)    # 文本投影层（可训练）
+        self.convnext = convnext
+        self.bert = bert
+        self.embed_dim = embed_dim
+        self.proj_img = nn.Linear(768, embed_dim)  # 图像投影层（可训练）
+        self.proj_txt = nn.Linear(768, embed_dim)  # 文本投影层（可训练）
 
-    def forward(self,images,input_ids,attention_mask):
+    def forward(self, images, input_ids, attention_mask):
         """前向：图文分别编码、投影、L2归一化。
 
         Args:
@@ -81,10 +86,14 @@ class DualTowerModel(nn.Module):
             (img_emb, txt_emb)：两个 [B, embed_dim] 的 L2 归一化向量，
             二者点积即为余弦相似度。
         """
-        img_feat=self.convnext(images)             # [B, 768]
-        txt_feat=self.bert(input_ids=input_ids,attention_mask=attention_mask).last_hidden_state[:,0,:]  # [B, 768] 取CLS
-        img_emb=self.proj_img(img_feat)          # [B, 256]
-        txt_emb=self.proj_txt(txt_feat)          # [B, 256]
-        img_emb=F.normalize(img_emb,dim=1,p=2)   # 每行除以模长 → 单位向量
-        txt_emb=F.normalize(txt_emb,dim=1,p=2)
-        return img_emb,txt_emb
+        img_feat = self.convnext(images)  # [B, 768]
+        txt_feat = self.bert(
+            input_ids=input_ids, attention_mask=attention_mask
+        ).last_hidden_state[
+            :, 0, :
+        ]  # [B, 768] 取CLS
+        img_emb = self.proj_img(img_feat)  # [B, 256]
+        txt_emb = self.proj_txt(txt_feat)  # [B, 256]
+        img_emb = F.normalize(img_emb, dim=1, p=2)  # 每行除以模长 → 单位向量
+        txt_emb = F.normalize(txt_emb, dim=1, p=2)
+        return img_emb, txt_emb
