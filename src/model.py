@@ -14,8 +14,8 @@ os.environ["HF_HUB_OFFLINE"] = (
 import torch
 from torch import nn
 from transformers import BertTokenizer
-from .bert_model.BERT import BERT
-from .bert_model.load_bert_weights import load_hf_weights
+from bert_model.BERT import BERT
+from bert_model.load_bert_weights import load_hf_weights
 from torch.nn import functional as F
 from Convnext import ConvNeXt
 
@@ -51,7 +51,11 @@ def load_bert():
         冻结且处于 eval 模式的手写 BERT；输出取 CLS 位置向量，[B, 768]。
     """
     bert = BERT(30522, 768, 12, 12, 0.1)
-    load_hf_weights()
+    bert = load_hf_weights(bert)
+    bert.eval()
+    for p in bert.parameters():
+        p.requires_grad = False
+    return bert
 
 
 class DualTowerModel(nn.Module):
@@ -87,11 +91,7 @@ class DualTowerModel(nn.Module):
             二者点积即为余弦相似度。
         """
         img_feat = self.convnext(images)  # [B, 768]
-        txt_feat = self.bert(
-            input_ids=input_ids, attention_mask=attention_mask
-        ).last_hidden_state[
-            :, 0, :
-        ]  # [B, 768] 取CLS
+        txt_feat = self.bert(input_ids, attention_mask)[:, 0, :]  # [B, 768] 取CLS
         img_emb = self.proj_img(img_feat)  # [B, 256]
         txt_emb = self.proj_txt(txt_feat)  # [B, 256]
         img_emb = F.normalize(img_emb, dim=1, p=2)  # 每行除以模长 → 单位向量
