@@ -34,9 +34,9 @@ async def lifespan(app: FastAPI):
     Args:
         app: FastAPI 应用实例。
     """
-    RESNET_PATH = ROOT / "data" / "raw" / "resnet50_timm.pth"
-    PROJ_PATH = ROOT / "output" / "models" / "model.pth"
-    model = load_model(RESNET_PATH, PROJ_PATH)
+    CONVNEXT_PATH = ROOT / "data" / "raw" / "convnext_tiny_1k_224_ema.pth"
+    PROJ_PATH = ROOT / "output" / "models" / "model_convnext.pth"
+    model = load_model(CONVNEXT_PATH, PROJ_PATH)
     model.eval()
     state["model"] = model
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
