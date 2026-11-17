@@ -2,8 +2,8 @@
 
 import torch
 from loss import dual_infonce_loss
-
-def train(model,loader,num_epoches=30,lr=1e-3):
+import time
+def train(model,loader,num_epoches=30,lr=1e-3,label=""):
     """用 InfoNCE 训练双塔模型的投影层。
 
     每个 batch 固定走"清空梯度 → 前向 → 算损失 → 反向 → 更新参数"
@@ -14,6 +14,7 @@ def train(model,loader,num_epoches=30,lr=1e-3):
         loader: 训练 DataLoader，建议用 class-balanced 采样器组 batch。
         num_epoches: 遍历整个数据集的轮数，默认30。
         lr: 学习率（Adam），默认1e-3。
+        label: 训练标签,用于日志标记
     Returns:
         list[float]：每个 epoch 的平均损失，可用于绘制 loss 曲线。
     """
@@ -23,8 +24,13 @@ def train(model,loader,num_epoches=30,lr=1e-3):
     model.convnext.eval()
     model.bert.eval()
     loss_history=[]
+    date = time.strftime("%Y-%m-%d_%H:%M:%S")
+    file = open(f"../data/records/train/{label}-{date}.txt","a",encoding="utf-8")
+    file.write(f"TrainTime:{date}, Batch={num_epoches}, LearningRate={lr}\n")
+    beg = time.perf_counter_ns()
     for epoch in range(num_epoches):
         epoch_loss=0.0
+        t0 = time.perf_counter_ns()
         for images,input_ids,attention_mask,_ in loader:
             optimizer.zero_grad()                              # 清空上一batch的梯度（梯度默认累加）
             img_emb,txt_emb=model(images,input_ids,attention_mask)  # 前向（训练需保留计算图，不能no_grad）
@@ -32,7 +38,13 @@ def train(model,loader,num_epoches=30,lr=1e-3):
             loss.backward()                                    # 反向传播：计算各可训练参数的梯度
             optimizer.step()                                   # 优化器按梯度更新投影层
             epoch_loss+=loss.item()                            # .item() 取纯数值并释放计算图
+        delta = time.perf_counter_ns()-t0
         avg_loss=epoch_loss/len(loader)
         loss_history.append(avg_loss)
-        print(f"Epoch {epoch+1:02d}/{num_epoches}, Loss: {avg_loss:.4f}")
+        log = f"Epoch {epoch+1:02d}/{num_epoches}, Loss: {avg_loss:.4f}, Cost(ns):{delta}\n"
+        file.write(log)
+        print(log)
+    last = time.perf_counter_ns()-beg
+    file.write(f"Total_Cost(ns):{last}\n")
+    file.close()
     return loss_history
