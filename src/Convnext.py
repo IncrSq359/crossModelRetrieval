@@ -2,38 +2,7 @@ import torch
 from torch import nn
 from torch import Tensor
 import torch.nn.functional as F
-
-
-class layer_norm(nn.Module):
-    """Layer Normalization,对H*W的每个元素单独处理\n
-    config = 1 --> [N,C,H,W]\n
-    config = 2 --> [N,H,W,C] 或 [N,C]
-
-    Args:
-        dim: normalized_shape
-        config: tensor_shape
-        eps
-    """
-
-    def __init__(self, dim, config, eps=1e-6):
-        super().__init__()
-        if config not in (1, 2):
-            raise NotImplementedError
-        self.config = config
-        self.norm_shape = dim
-        self.weight = nn.Parameter(torch.ones(dim))
-        self.bias = nn.Parameter(torch.zeros(dim))
-        self.eps = eps
-
-    def forward(self, x: Tensor):
-        if self.config == 1:
-            ave = x.mean(dim=1, keepdim=True)
-            s = (x - ave).pow(2).mean(dim=1, keepdim=True)
-            x = (x - ave) / (s + self.eps).sqrt()
-            x = x * self.weight[:, None, None] + self.bias[:, None, None]
-            return x
-        else:
-            return F.layer_norm(x, (self.norm_shape,), self.weight, self.bias, self.eps)
+from utils.layer_normalize import layer_norm
 
 
 class Block(nn.Module):
@@ -48,7 +17,7 @@ class Block(nn.Module):
     def __init__(self, dim, layer_scale_value=1e-6, gelu_config='tanh'):
         super().__init__()
         self.dwconv = nn.Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)
-        self.norm = layer_norm(dim, 2)
+        self.norm = layer_norm(3, dim)
         self.pwconv1 = nn.Linear(dim, 4 * dim)
         if gelu_config not in ['tanh', 'none']:
             raise NotImplementedError
@@ -97,22 +66,23 @@ class ConvNeXt(nn.Module):
         self.downsample_layers = nn.ModuleList()
         stem = nn.Sequential(
             nn.Conv2d(in_channel, dim[0], kernel_size=4, stride=4),
-            layer_norm(dim[0], config=1)
+            layer_norm(1,dim[0])
         )
         self.downsample_layers.append(stem)
         for i in range(3):
             self.downsample_layers.append(nn.Sequential(
-                layer_norm(dim[i], config=1),
+                layer_norm(1,dim[i]),
                 nn.Conv2d(dim[i], dim[i + 1], kernel_size=2, stride=2)
             ))
         self.stages = nn.ModuleList()
         for i in range(4):
             stage = nn.Sequential(*[
-                Block(dim[i], layer_scale_value=layer_scale_value, gelu_config='tanh')
+                Block(dim[i], layer_scale_value=layer_scale_value,
+                      gelu_config='tanh')
                 for _ in range(depth[i])
             ])
             self.stages.append(stage)
-        self.norm = layer_norm(dim[3], config=2)
+        self.norm = layer_norm(-1,dim[3])
         if out_class > 0:
             self.head = nn.Linear(dim[3], out_class)
         else:
