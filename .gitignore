@@ -13,8 +13,6 @@ venv/
 # /data/raw/ 存放原始下载物（压缩包、官方标注 CSV、解压图片、预训练权重缓存）
 /data/raw/*
 !/data/raw/.gitkeep
-# /data/annotations/ 存放由脚本派生出的标准化标注（可由脚本重新生成）
-/data/annotations/*
 !/data/annotations/.gitkeep
 
 # ---- 实验输出（缓存特征、Faiss 索引、评测结果等产物）----
