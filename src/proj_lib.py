@@ -7,6 +7,7 @@ import os
 import random
 from datetime import datetime
 
+import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
@@ -207,8 +208,45 @@ def write_train_log(
     return path
 
 
+def load_projection(path: str):
+    """加载训练好的投影层权重。
+
+    Args:
+        path: projection_flickr30k.pth 的路径。
+
+    Returns:
+        (proj_img, proj_txt)：两个载入了权重的 nn.Linear。
+    """
+    ckpt = torch.load(path, map_location="cpu")
+
+    proj_img = nn.Linear(768, ckpt["embed_dim"])
+    proj_txt = nn.Linear(768, ckpt["embed_dim"])
+
+    proj_img.load_state_dict(ckpt["proj_img"])
+    proj_txt.load_state_dict(ckpt["proj_txt"])
+
+    return proj_img, proj_txt
+
+
+@torch.no_grad()
+def project_and_normalize(features: torch.Tensor, proj: nn.Module) -> torch.Tensor:
+    """先投影，再 L2 归一化。
+
+    Args:
+        features: [N, 768] 原始特征。
+        proj: 投影层（图像侧或文本侧）。
+
+    Returns:
+        [N, 256]，每行长度为 1。
+    """
+    out = proj(features)
+    out = F.normalize(out, dim=-1)
+    return out
+
+
 if __name__ == "__main__":
     # 自测：数据规模应为 [31014, 768] / [155070, 768] / 31014 29000 1014
     d = load_data()
     print(d["img_feat"].shape, d["txt_feat"].shape)
     print(len(d["caption_rows_of"]), len(d["train_img_rows"]), len(d["val_img_rows"]))
+    feats = torch.load("output/features/image_features.pth")["features"]
