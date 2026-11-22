@@ -5,6 +5,7 @@
 
 import os
 import time
+from faiss import Linear
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -27,17 +28,46 @@ BASE = {
     "temperature": 0.07,
     "weight_decay": 0.0,
     "embed_dim": 256,
+    "hidden_dim": 0,
+    "dropout": 0.0,
     "base_seed": 42,
     "save": False,  # 调参期间不要覆盖已保存的权重
 }
 
 # 要对比的配置：每次只改一个变量，才能看出是谁起的作用
 CONFIGS = [
-    {"name": "baseline"},
-    {"name": "lr3e-3", "lr": 3e-3},
-    {"name": "temp0.03", "temperature": 0.03},
-    {"name": "epochs40", "epochs": 40},
+    # {"name": "baseline"},
+    # {"name": "lr3e-3", "lr": 3e-3},
+    # {"name": "temp0.03", "temperature": 0.03},
+    # {"name": "epochs40", "epochs": 40},
+    # {"name": "mlp512_ep40", "epochs": 40, "hidden_dim": 512},
+    # {"name": "mlp512_do0.3", "epochs": 40, "hidden_dim": 512, "dropout": 0.3},
+    # {"name": "mlp512_do0.5", "epochs": 40, "hidden_dim": 512, "dropout": 0.5},
+    # {"name": "lin-ep80", "epochs": 80},
+    # {"name": "lin-ep150", "epochs": 150},
+    # {"name": "lin-ep150-t0.1", "epochs": 150, "temperature": 0.1},
+    {"name": "final", "epochs": 150, "save": True},
 ]
+
+
+def build_proj(in_dim, hidden_dim, out_dim, dropout=0.0):
+    """构建投影层：hidden_dim 为 0 时是单层线性，否则是两层 MLP。
+
+    Args:
+        in_dim: 输入维度（768）。
+        hidden_dim: 隐藏层宽度，0 表示不用隐藏层。
+        out_dim: 输出维度（embed_dim）。
+    Returns:
+        一个 nn.Module。
+    """
+    if hidden_dim == 0:
+        return nn.Linear(in_dim, out_dim)
+    return nn.Sequential(
+        nn.Linear(in_dim, hidden_dim),
+        nn.ReLU(),
+        nn.Dropout(dropout),
+        nn.Linear(hidden_dim, out_dim),
+    )
 
 
 def train(hp, data):
@@ -53,8 +83,8 @@ def train(hp, data):
     in_dim_img, in_dim_txt = img_feat.shape[1], txt_feat.shape[1]
 
     torch.manual_seed(hp["base_seed"])  # 固定初始化，保证结果可复现
-    proj_img = nn.Linear(in_dim_img, hp["embed_dim"])
-    proj_txt = nn.Linear(in_dim_txt, hp["embed_dim"])
+    proj_img = build_proj(in_dim_img, hp["hidden_dim"], hp["embed_dim"], hp["dropout"])
+    proj_txt = build_proj(in_dim_txt, hp["hidden_dim"], hp["embed_dim"], hp["dropout"])
     params = list(proj_img.parameters()) + list(proj_txt.parameters())
     n_params = sum(p.numel() for p in params)
 

@@ -146,6 +146,8 @@ def evaluate(proj_img, proj_txt, data, img_rows_subset):
     Returns:
         字典，键如 "T2I@1"、"I2T@10"。
     """
+    proj_img.eval()
+    proj_txt.eval()
     pos = {img_row: p for p, img_row in enumerate(img_rows_subset)}
     txt_rows = []
     gt = []
