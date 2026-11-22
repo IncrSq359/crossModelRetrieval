@@ -71,34 +71,49 @@ def run_brute():
     }
 
 
-def run_hnsw(m, ef_construction, ef_search):
-    """用一组参数建 HNSW 索引、查询，并计算各项指标。
+def build_hnsw(m, ef_construction):
+    """建 HNSW 索引并计时。
 
     Args:
         m: 每个点的邻居数。
         ef_construction: 建图时的候选数。
-        ef_search: 查询时的候选数。
+
+    Returns:
+        (index, build_time) 二元组。
+    """
+    # efSearch 这里随便给一个值，查询时会用 search 的临时参数覆盖
+    index = Index(gallery_np.shape[1], m, ef_construction, 64)
+
+    t0 = time.perf_counter()
+    index.add(gallery_np)  # HNSW 在 add 时建图
+    build_time = time.perf_counter() - t0
+    return index, build_time
+
+
+def query_hnsw(index, name, build_time, ef_search):
+    """在已建好的索引上，用指定 efSearch 查询并计算指标。
+
+    Args:
+        index: build_hnsw 返回的索引。
+        name: 结果里显示的前缀名。
+        build_time: 建索引耗时，原样放进结果。
+        ef_search: 本次查询的候选数。
 
     Returns:
         字典，含 name、build_time、search_time、overlap、recall。
     """
-    index = Index(gallery_np.shape[1], m, ef_construction, ef_search)
-
     t0 = time.perf_counter()
-    index.add(gallery_np)
-    build_time = time.perf_counter() - t0
-
-    t0 = time.perf_counter()
-    _, found = index.search(queries_np, TOP_K)
+    _, found = index.search(queries_np, TOP_K, efSearch=ef_search)  # 临时覆盖 efSearch
     search_time = time.perf_counter() - t0
 
     return {
-        "name": f"hnsw m={m} efC={ef_construction} efS={ef_search}",
+        "name": f"{name} efS={ef_search}",
         "build_time": build_time,
         "search_time": search_time,
         "overlap": calc_overlap(found, brute_np, TOP_K),
         "recall": calc_recall(found, gt_np),
     }
+
 
 def show(r):
     """打印一行结果。
@@ -116,4 +131,8 @@ def show(r):
 
 if __name__ == "__main__":
     show(run_brute())
-    show(run_hnsw(16, 200, 64))
+
+    # 索引只建一次，之后只换 efSearch
+    index, build_time = build_hnsw(16, 200)
+    for ef_s in [10, 16, 32, 64, 128, 256]:
+        show(query_hnsw(index, "hnsw m=16 efC=200", build_time, ef_s))
