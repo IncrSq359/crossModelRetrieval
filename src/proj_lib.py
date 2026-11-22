@@ -244,6 +244,35 @@ def project_and_normalize(features: torch.Tensor, proj: nn.Module) -> torch.Tens
     return out
 
 
+def build_eval_set(data, proj_img, proj_txt, img_rows):
+    """构造评测用的图库、查询向量和标准答案。
+
+    图库是全部图片投影后的向量；查询是 img_rows 这些图片的所有
+    caption 投影后的向量；标准答案是每条 caption 所属图片在图库中的行号。
+
+    Args:
+        data: load_data() 返回的字典。
+        proj_img: 图像投影层。
+        proj_txt: 文本投影层。
+        img_rows: 参与评测的图片行号列表，例如 data["val_img_rows"]。
+
+    Returns:
+        (gallery, queries, gt) 三元组：
+        gallery 形状 [N, 256]，queries 形状 [Q, 256]，gt 形状 [Q]。
+    """
+    gallery = project_and_normalize(data["img_feat"], proj_img)
+
+    txt_rows = []
+    gt = []
+    for img_row in img_rows:
+        for txt_row in data["caption_rows_of"][img_row]:
+            txt_rows.append(txt_row)
+            gt.append(img_row)
+
+    queries = project_and_normalize(data["txt_feat"][txt_rows], proj_txt)
+    return gallery, queries, torch.tensor(gt)
+
+
 if __name__ == "__main__":
     # 自测：数据规模应为 [31014, 768] / [155070, 768] / 31014 29000 1014
     d = load_data()
