@@ -2,7 +2,7 @@ import torch
 import time
 import numpy as np
 from ANN import Index
-from proj_lib import (
+from utils.proj_lib import (
     load_data,
     load_projection,
     evaluate,

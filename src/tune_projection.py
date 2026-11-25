@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from proj_lib import (
+from utils.proj_lib import (
     PROJECT_ROOT,
     evaluate,
     info_nce_loss,

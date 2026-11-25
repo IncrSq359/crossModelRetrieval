@@ -91,7 +91,7 @@ def save_features(features, filenames, splits, out_path):
         out_path)
     
 if __name__=="__main__":
-    from preprocess import get_image_transform
+    from data.preprocess import get_image_transform
     from model import load_convnext
     
     filenames,splits=load_unique_images(CSV_PATH)
