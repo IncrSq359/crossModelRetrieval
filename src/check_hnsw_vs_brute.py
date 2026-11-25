@@ -13,7 +13,7 @@ from app.backend.gallery import project_gallery
 from app.backend.retriever import BruteForceRetriever, HNSWRetriever
 
 CONVNEXT_PATH = ROOT / "data" / "raw" / "convnext_tiny_1k_224_ema.pth"
-PROJ_PATH = ROOT / "output" / "models" / "model_convnext.pth"
+PROJ_PATH = ROOT / "output" / "models" / "projection_flickr30k.pth"
 model = load_model(CONVNEXT_PATH, PROJ_PATH)
 model.eval()
 FEATURE_PATH = ROOT / "output" / "features" / "image_features.pth"

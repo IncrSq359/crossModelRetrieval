@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
         app: FastAPI 应用实例。
     """
     CONVNEXT_PATH = ROOT / "data" / "raw" / "convnext_tiny_1k_224_ema.pth"
-    PROJ_PATH = ROOT / "output" / "models" / "model_convnext.pth"
+    PROJ_PATH = ROOT / "output" / "models" / "projection_flickr30k.pth"
     model = load_model(CONVNEXT_PATH, PROJ_PATH)
     model.eval()
     state["model"] = model
