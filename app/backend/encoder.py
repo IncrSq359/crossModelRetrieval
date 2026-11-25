@@ -1,11 +1,7 @@
 """查询侧编码模块：把用户输入的图片或文本变成 256 维单位向量。"""
 
-import sys
-from pathlib import Path
+from app.backend import paths
 
-SRC_DIR = Path(__file__).resolve().parents[2] / "src"
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
 from src.model import load_convnext, load_bert, DualTowerModel
 import torch
 from torch.nn import functional as F
@@ -69,9 +65,7 @@ def encode_text(model, tokenizer, text, max_len=32):
         return_tensors="pt",
     )
     with torch.no_grad():
-        out = model.bert(
-            encoded["input_ids"], encoded["attention_mask"]
-        )
+        out = model.bert(encoded["input_ids"], encoded["attention_mask"])
         feat = out[:, 0, :]
         emb = model.proj_txt(feat)
         emb = F.normalize(emb, dim=1, p=2)

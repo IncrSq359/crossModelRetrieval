@@ -1,10 +1,6 @@
 """检索模块：在图库特征矩阵上做暴力余弦检索。"""
 
-import sys
-from pathlib import Path
-
-SRC_DIR = Path(__file__).resolve().parent.parent.parent / "src"
-sys.path.insert(0, str(SRC_DIR))
+from app.backend import paths
 import torch
 from ANN import Index
 

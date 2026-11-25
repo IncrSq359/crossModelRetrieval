@@ -4,6 +4,8 @@ from os import read
 from pathlib import Path
 from pydantic import BaseModel
 
+from app.backend import retriever
+
 ROOT = Path(__file__).resolve().parents[2]
 
 import torch
@@ -19,12 +21,13 @@ import io
 
 from app.backend.encoder import load_model, encode_image, encode_text
 from app.backend.gallery import load_captions, build_filename_index, project_gallery
-from app.backend.retriever import BruteForceRetriever
+from app.backend.retriever import BruteForceRetriever, HNSWRetriever
 from src.preprocess import get_image_transform
 from transformers import BertTokenizer
 
 # 全局容器：启动时填充，请求时读取
 state = {}
+RETRIEVER_NAME = "hnsw"  # 可选 "brute" 或 "hnsw"
 
 
 @asynccontextmanager
@@ -51,8 +54,12 @@ async def lifespan(app: FastAPI):
     state["filenames"] = data["filenames"]
     state["emb_img"] = emb_img
 
-    retriever = BruteForceRetriever(emb_img)
+    if RETRIEVER_NAME == "hnsw":
+        retriever = HNSWRetriever(emb_img)
+    else:
+        retriever = BruteForceRetriever(emb_img)
     state["retriever"] = retriever
+    state["retriever_name"] = RETRIEVER_NAME
 
     CSV_PATH = ROOT / "data" / "annotations" / "captions_flickr30k.csv"
     captions = load_captions(CSV_PATH)
@@ -92,7 +99,7 @@ def health():
     """
     n = state["emb_img"].shape[0]
     dim = state["emb_img"].shape[1]
-    return {"index_size": n, "dim": dim, "retriever": "brute"}
+    return {"index_size": n, "dim": dim, "retriever": state["retriever_name"]}
 
 
 def build_response(q_vec, top_k, t0):
@@ -121,7 +128,11 @@ def build_response(q_vec, top_k, t0):
             }
         )
     latency_ms = round((time.perf_counter() - t0) * 1000, 1)
-    return {"latency_ms": latency_ms, "retriever": "brute", "results": results}
+    return {
+        "latency_ms": latency_ms,
+        "retriever": state["retriever_name"],
+        "results": results,
+    }
 
 
 @app.post("/api/search/text")
@@ -159,6 +170,6 @@ async def search_image(file: UploadFile = File(...), top_k: int = 20):
 
 app.mount("/images", StaticFiles(directory=IMAGE_DIR))
 
-FRONTEND_DIR=Path(__file__).resolve().parent.parent/"frontend"
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
-app.mount("/",StaticFiles(directory=FRONTEND_DIR,html=True),name="frontend")
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
