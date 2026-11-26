@@ -4,7 +4,7 @@ import time
 import numpy as np
 import torch
 from ANN import Index
-from proj_lib import build_eval_set, load_projection, load_data
+from utils.proj_lib import build_eval_set, load_projection, load_data
 
 # ---------- 准备数据 ----------
 data = load_data()

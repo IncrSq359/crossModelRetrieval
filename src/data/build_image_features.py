@@ -98,14 +98,13 @@ def save_features(features, filenames, splits, out_path):
         out_path: 输出文件路径（.pth）。
     """
     out_path = Path(out_path)
-    out_path.parent.mkdir(parents=True, exist_ok=True)  # 目录不存在就创建
-    torch.save(
-        {"features": features, "filenames": filenames, "splits": splits}, out_path
-    )
-
-
-if __name__ == "__main__":
-    from preprocess import get_image_transform
+    out_path.parent.mkdir(parents=True, exist_ok=True)   # 目录不存在就创建
+    torch.save({"features":features,"filenames":filenames,"splits":splits
+        },
+        out_path)
+    
+if __name__=="__main__":
+    from data.preprocess import get_image_transform
     from model import load_convnext
 
     filenames, splits = load_unique_images(CSV_PATH)

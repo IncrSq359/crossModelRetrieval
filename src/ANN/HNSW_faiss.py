@@ -27,8 +27,8 @@ class Index():
             efSearch (int, optional): 临时更改搜索候选池大小. Defaults to -1.
 
         Returns:
-            返回nq*k矩阵D,I
-            I中第i行为第i个查询返回的k个向量id,按距离升序排序
+            返回nq*k矩阵D, I, nq为查询矩阵的行数\n
+            I中第i行为第i个查询返回的k个向量id,按距离升序排序\n
             D为对应的向量与查询向量的平方距离
         """
         originefs = self.index.hnsw.efSearch
