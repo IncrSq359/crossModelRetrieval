@@ -5,20 +5,16 @@
 
 import os
 import time
-from faiss import Linear
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from .utils.proj_lib import build_proj
+from .data.dataset import load_data 
+from .data.process import make_epoch_batches
+from .utils.log import write_train_log
+from .utils.loss import info_nce_loss
+from .utils.recall import evaluate
 
-from utils.proj_lib import (
-    PROJECT_ROOT,
-    evaluate,
-    info_nce_loss,
-    load_data,
-    make_epoch_batches,
-    write_train_log,
-)
-
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # 默认超参数（基线）。CONFIGS 里每组只需写「和基线不同的项」。
 BASE = {
     "name": "baseline",
@@ -48,26 +44,6 @@ CONFIGS = [
     # {"name": "lin-ep150-t0.1", "epochs": 150, "temperature": 0.1},
     {"name": "final", "epochs": 150, "save": True},
 ]
-
-
-def build_proj(in_dim, hidden_dim, out_dim, dropout=0.0):
-    """构建投影层：hidden_dim 为 0 时是单层线性，否则是两层 MLP。
-
-    Args:
-        in_dim: 输入维度（768）。
-        hidden_dim: 隐藏层宽度，0 表示不用隐藏层。
-        out_dim: 输出维度（embed_dim）。
-    Returns:
-        一个 nn.Module。
-    """
-    if hidden_dim == 0:
-        return nn.Linear(in_dim, out_dim)
-    return nn.Sequential(
-        nn.Linear(in_dim, hidden_dim),
-        nn.ReLU(),
-        nn.Dropout(dropout),
-        nn.Linear(hidden_dim, out_dim),
-    )
 
 
 def train(hp, data):

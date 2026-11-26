@@ -1,10 +1,10 @@
-from re import search
-from sys import flags
+
 import time
 import numpy as np
 import torch
 from ANN import Index
-from utils.proj_lib import build_eval_set, load_projection, load_data
+from .data.process import build_eval_set
+from .data.dataset import load_projection,load_data
 
 # ---------- 准备数据 ----------
 data = load_data()
