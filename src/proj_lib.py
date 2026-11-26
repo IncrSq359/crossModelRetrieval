@@ -7,7 +7,6 @@ import os
 import random
 from datetime import datetime
 
-from sympy import true
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
@@ -173,6 +172,30 @@ def recall_i2t(sim, gt, k):
     return hit.float().mean().item()
 
 
+def ndcg_i2t(sim, gt, k=10):
+    """图搜文的 NDCG@K（每张图有 5 条正确 caption）。
+
+    Args:
+        sim: [num_caption, num_img] 相似度矩阵。
+        gt: [num_caption] 每条 caption 对应的图片列号。
+        k: 只统计前 k 名。
+    Returns:
+        NDCG@K 的平均值（float）。
+    """
+    topk_idx = sim.T.topk(k, dim=1).indices
+    pred_img = gt[topk_idx]
+    self_pos = torch.arange(sim.shape[1]).unsqueeze(1)
+    topk_rel = (pred_img == self_pos).float()
+    ranks = torch.arange(1, k + 1).float()
+    discount = 1.0 / torch.log2(ranks.float() + 1)
+    dcg = (topk_rel * discount).sum(dim=1)
+    n_rel = sim.shape[0] // sim.shape[1]
+    ideal_hits = min(n_rel, k)
+    idcg = discount[:ideal_hits].sum()
+    ndcg = dcg / idcg
+    return ndcg.mean().item()
+
+
 def evaluate(proj_img, proj_txt, data, img_rows_subset):
     """对一批图像及其 caption 计算 Recall（候选池 = 这批图像）。
 
@@ -205,6 +228,8 @@ def evaluate(proj_img, proj_txt, data, img_rows_subset):
     for k in (1, 5, 10):
         recalls[f"T2I@{k}"] = recall_t2i(sim, gt, k)
         recalls[f"I2T@{k}"] = recall_i2t(sim, gt, k)
+    recalls["T2I-NDCG@10"] = ndcg_t2i(sim, gt, 10)
+    recalls["I2T-NDCG@10"] = ndcg_i2t(sim, gt, 10)
     return recalls
 
 
@@ -324,13 +349,3 @@ if __name__ == "__main__":
     print(d["img_feat"].shape, d["txt_feat"].shape)
     print(len(d["caption_rows_of"]), len(d["train_img_rows"]), len(d["val_img_rows"]))
     feats = torch.load("output/features/image_features.pth")["features"]
-    sim = torch.tensor(
-        [
-            [0.9, 0.1, 0.3, 0.2],  # 第 0 条文字
-            [0.2, 0.5, 0.8, 0.1],  # 第 1 条文字
-            [0.4, 0.3, 0.2, 0.7],  # 第 2 条文字
-        ]
-    )
-    gt = torch.tensor([0, 1, 3])  # 每条文字对应的正确图片的列号
-    print(ndcg_t2i(sim, gt, k=1))  # 期望约 0.667（三条里两条命中，各得 1，一条得 0）
-    print(ndcg_t2i(sim, gt, k=10))  # 期望约 0.877（1.000 + 0.631 + 1.000 取平均）
