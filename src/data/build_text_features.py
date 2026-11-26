@@ -1,16 +1,17 @@
 """离线提取 Flickr30k 全部 caption 的 BERT 特征并缓存到磁盘。"""
 
 import os
+import time
 
 os.environ["HF_HUB_OFFLINE"] = "1"
 
 import torch
 import csv
 from transformers import BertTokenizer
-from model import load_bert
+from model import load_bert, masked_mean_pool
 
 CSV_PATH = "data/annotations/captions_flickr30k.csv"
-SAVE_PATH = "output/features/text_features.pth"
+SAVE_PATH = "output/features/text_features_v2.pth"
 MAX_LEN = 32
 BATCH_SIZE = 128
 
@@ -43,11 +44,16 @@ def main():
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     bert = load_bert()
     bert.eval()  # 关闭 dropout，保证特征可复现
+    all_cls = []
+    all_mean = []
 
-    all_feats = []
-    with torch.no_grad():  # 不需要梯度，省内存省时间
+    tokenize_time = 0.0
+
+    with torch.no_grad():
         for start in range(0, len(captions), BATCH_SIZE):
             batch_texts = captions[start : start + BATCH_SIZE]
+
+            t0 = time.perf_counter()
 
             enc = tokenizer(
                 batch_texts,
@@ -56,24 +62,38 @@ def main():
                 max_length=MAX_LEN,
                 return_tensors="pt",
             )
-            feats = bert(enc["input_ids"], enc["attention_mask"])  # [B, 768]
-            feats = feats[:, 0, :]  # 取 CLS 向量，得到 [B, 768]
-            all_feats.append(feats)
+
+            tokenize_time += time.perf_counter() - t0
+            last_hidden = bert(
+                enc["input_ids"], enc["attention_mask"]
+            )  # [B, 32, 768]，注意现在是完整序列
+            cls_feats = last_hidden[:, 0, :]
+            mean_feats = masked_mean_pool(last_hidden, enc["attention_mask"])
+            all_mean.append(mean_feats)
+            all_cls.append(cls_feats)
             done = min(start + BATCH_SIZE, len(captions))  # 已完成的条数
             if (start // BATCH_SIZE) % 50 == 0 or done == len(captions):
                 print(f"进度 {done}/{len(captions)}")
 
-    all_feats = torch.cat(all_feats, dim=0)  # [N, 768]
-    print("all_feats.shape:", all_feats.shape)
-    os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-    torch.save(
-        {
-            "features": all_feats,  # [155070, 768]
-            "filenames": filenames,  # 与 features 行对齐
-            "caption_idxs": caption_idxs,  # 与 features 行对齐
-        },
-        SAVE_PATH,
-    )
+        all_cls = torch.cat(all_cls, dim=0)  # [N, 768]
+        all_mean = torch.cat(all_mean, dim=0)
+        print("all_cls.shape:", all_cls.shape, "all_mean.shape:", all_mean.shape)
+        if len(all_cls) != len(filenames) or len(all_mean) != len(filenames):
+            raise ValueError(
+                "Text feature rows must match caption metadata: "
+                f"cls={len(all_cls)}, mean={len(all_mean)}, filenames={len(filenames)}"
+            )
+        os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
+        torch.save(
+            {
+                "cls": all_cls,
+                "mean": all_mean,
+                "filenames": filenames,  # 与 features 行对齐
+                "caption_idxs": caption_idxs,  # 与 features 行对齐
+            },
+            SAVE_PATH,
+        )
+        print("全部文本 Tokenization 用时:", tokenize_time)
 
 
 if __name__ == "__main__":
