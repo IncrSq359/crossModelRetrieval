@@ -17,7 +17,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_STORE = os.path.join(os.path.dirname(PROJECT_ROOT), "data_store")
 
 IMG_PATH = os.path.join(PROJECT_ROOT, "output", "features", "image_features.pth")
-TXT_PATH = os.path.join(PROJECT_ROOT, "output", "features", "text_features.pth")
+TXT_PATH = os.path.join(PROJECT_ROOT, "output", "features", "text_features_v2.pth")
 
 
 def load_data(img_path=IMG_PATH, txt_path=TXT_PATH):
@@ -29,7 +29,7 @@ def load_data(img_path=IMG_PATH, txt_path=TXT_PATH):
     Returns:
         字典，键为：
             img_feat: 图像特征 [31014, 768]。
-            txt_feat: 文本特征 [155070, 768]。
+            txt_feat: 文本特征 [155070, 1536]（masked mean 与 CLS 拼接）。
             caption_rows_of: 图像行号 -> 该图 5 条 caption 的行号列表。
             train_img_rows: 训练集图像行号列表（29000 个）。
             val_img_rows: 验证集图像行号列表（1014 个）。
@@ -50,9 +50,28 @@ def load_data(img_path=IMG_PATH, txt_path=TXT_PATH):
     train_img_rows = [i for i, s in enumerate(splits) if s == "train"]
     val_img_rows = [i for i, s in enumerate(splits) if s == "val"]
 
+    txt_mean = txt_data["mean"]
+    txt_cls = txt_data["cls"]
+    txt_filenames = txt_data["filenames"]
+    if (
+        txt_mean.shape[0] != len(txt_filenames)
+        or txt_cls.shape[0] != len(txt_filenames)
+    ):
+        raise ValueError(
+            "Text feature rows must match caption metadata: "
+            f"mean={txt_mean.shape[0]}, cls={txt_cls.shape[0]}, "
+            f"filenames={len(txt_filenames)}"
+        )
+    if txt_mean.shape != txt_cls.shape:
+        raise ValueError(
+            f"Mean and CLS feature shapes must match, got "
+            f"{tuple(txt_mean.shape)} and {tuple(txt_cls.shape)}"
+        )
+    txt_feat = torch.cat((txt_mean, txt_cls), dim=1)
+
     return {
         "img_feat": img_data["features"],
-        "txt_feat": txt_data["features"],
+        "txt_feat": txt_feat,
         "caption_rows_of": caption_rows_of,
         "train_img_rows": train_img_rows,
         "val_img_rows": val_img_rows,
@@ -158,8 +177,8 @@ def evaluate(proj_img, proj_txt, data, img_rows_subset):
             gt.append(pos[img_row])  # 这条 caption 的正确图在候选池里的位置
 
     with torch.no_grad():  # 评估不需要梯度
-        img_emb = F.normalize(proj_img(data["img_feat"][img_rows_subset]), dim=1)
-        txt_emb = F.normalize(proj_txt(data["txt_feat"][txt_rows]), dim=1)
+        img_emb = project_and_normalize(data["img_feat"][img_rows_subset], proj_img)
+        txt_emb = project_and_normalize(data["txt_feat"][txt_rows], proj_txt)
 
     sim = txt_emb @ img_emb.T  # [num_caption, num_img]
     gt = torch.tensor(gt)
@@ -219,8 +238,8 @@ def load_projection(path: str):
     """
     ckpt = torch.load(path, map_location="cpu")
 
-    proj_img = nn.Linear(768, ckpt["embed_dim"])
-    proj_txt = nn.Linear(768, ckpt["embed_dim"])
+    proj_img = nn.Linear(ckpt["proj_img"]["weight"].shape[1], ckpt["embed_dim"])
+    proj_txt = nn.Linear(ckpt["proj_txt"]["weight"].shape[1], ckpt["embed_dim"])
 
     proj_img.load_state_dict(ckpt["proj_img"])
     proj_txt.load_state_dict(ckpt["proj_txt"])
@@ -239,6 +258,14 @@ def project_and_normalize(features: torch.Tensor, proj: nn.Module) -> torch.Tens
     Returns:
         [N, 256]，每行长度为 1。
     """
+    input_layer = next(
+        (layer for layer in proj.modules() if isinstance(layer, nn.Linear)), None
+    )
+    if input_layer is not None and features.shape[-1] != input_layer.in_features:
+        raise ValueError(
+            f"Feature dimension {features.shape[-1]} does not match projection "
+            f"input dimension {input_layer.in_features}"
+        )
     out = proj(features)
     out = F.normalize(out, dim=-1)
     return out
