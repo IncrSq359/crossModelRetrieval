@@ -2,7 +2,7 @@
 
 from app.backend import paths
 
-from src.model import load_convnext, load_bert, DualTowerModel
+from src.model import load_convnext, load_bert, DualTowerModel, masked_mean_pool
 import torch
 from torch.nn import functional as F
 
@@ -18,8 +18,20 @@ def load_model(convnext_path, proj_path):
     """
     convnext = load_convnext(convnext_path)
     bert = load_bert()
-    model = DualTowerModel(convnext, bert)
     ckpt = torch.load(proj_path, map_location="cpu", weights_only=True)
+    embed_dim = ckpt.get("embed_dim", ckpt["proj_img"]["weight"].shape[0])
+    model = DualTowerModel(convnext, bert, embed_dim=embed_dim)
+    expected_shapes = {
+        "proj_img": model.proj_img.weight.shape,
+        "proj_txt": model.proj_txt.weight.shape,
+    }
+    for name, expected_shape in expected_shapes.items():
+        actual_shape = ckpt[name]["weight"].shape
+        if actual_shape != expected_shape:
+            raise ValueError(
+                f"{name} checkpoint weight shape {tuple(actual_shape)} does not "
+                f"match model shape {tuple(expected_shape)}"
+            )
     model.proj_img.load_state_dict(ckpt["proj_img"])
     model.proj_txt.load_state_dict(ckpt["proj_txt"])
     model.eval()
@@ -65,8 +77,10 @@ def encode_text(model, tokenizer, text, max_len=32):
         return_tensors="pt",
     )
     with torch.no_grad():
-        out = model.bert(encoded["input_ids"], encoded["attention_mask"])
-        feat = out[:, 0, :]
+        last_hidden = model.bert(encoded["input_ids"], encoded["attention_mask"])
+        cls_feat = last_hidden[:, 0, :]
+        mean_feat = masked_mean_pool(last_hidden, encoded["attention_mask"])
+        feat = torch.cat((mean_feat, cls_feat), dim=1)
         emb = model.proj_txt(feat)
         emb = F.normalize(emb, dim=1, p=2)
     return emb[0]

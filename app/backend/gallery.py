@@ -29,14 +29,19 @@ def build_filename_index(filenames):
     return {fn : i for i, fn in enumerate(filenames)}
 
 def project_gallery(features,proj_img):
-    """把图库的 2048 维原始特征投影成 256 维单位向量矩阵。
+    """把图库的 768 维原始特征投影成 256 维单位向量矩阵。
 
     Args:
-        features: 图库原始特征 [N, 2048]。
+        features: 图库原始特征 [N, 768]。
         proj_img: 图像投影层（与查询侧是同一个模块）。
     Returns:
         图库矩阵 [N, 256]，每行是单位向量。
     """
+    if features.shape[-1] != proj_img.in_features:
+        raise ValueError(
+            f"Gallery feature dimension {features.shape[-1]} does not match "
+            f"image projection input dimension {proj_img.in_features}"
+        )
     with torch.no_grad():
         emb=proj_img(features)
         emb=F.normalize(emb,dim=1,p=2)

@@ -1,11 +1,13 @@
-"""图库特征提取：把全部图库图片过一遍 ResNet，缓存 2048 维原始特征。"""
+"""图库特征提取：把全部图库图片过一遍 ConvNeXt，缓存 768 维原始特征。"""
 import csv
 from pathlib import Path
 from PIL import Image
 from torch.utils.data import Dataset,DataLoader
 import torch
 from preprocess import get_image_transform
-from model import load_resnet
+from model import load_convnext
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def list_gallery_images(csv_path):
     """从标注 CSV 中按首次出现顺序取出不重复的图片文件名及其划分。
@@ -51,22 +53,22 @@ class GalleryImageDataset(Dataset):
         image = Image.open(image_path).convert("RGB") 
         return self.transform(image)   
 
-def extract_features(resnet, dataset, batch_size=32, num_workers=0):
-    """批量提取图库图片的 ResNet 原始特征。
+def extract_features(convnext, dataset, batch_size=32, num_workers=0):
+    """批量提取图库图片的 ConvNeXt 原始特征。
 
     Args:
-        resnet: load_resnet 返回的冻结 ResNet（输出 2048 维）。
+        convnext: load_convnext 返回的冻结 ConvNeXt（输出 768 维）。
         dataset: GalleryImageDataset，顺序即特征矩阵的行顺序。
         batch_size: 每批图片数。
         num_workers: 读图子进程数，0 表示在主进程中读。
     Returns:
-        特征矩阵 [N, 2048]，第 i 行对应 dataset 的第 i 张图。
+        特征矩阵 [N, 768]，第 i 行对应 dataset 的第 i 张图。
     """
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     chunks = []
     with torch.no_grad():
         for images in loader:
-            feat = resnet(images)
+            feat = convnext(images)
             chunks.append(feat)
     return torch.cat(chunks, dim=0)
 
@@ -76,17 +78,17 @@ def main(limit=None):
     Args:
         limit: 只处理前 limit 张图，用于快速测试；None 表示全部。
     """
-    csv_path = "data/annotations/captions_flickr30k.csv"
-    images_dir = "data/raw/flickr30k/flickr30k-images"
-    resnet_path = "data/raw/resnet50_timm.pth"
-    out_path = Path("output/features/image_features.pth")
+    csv_path = PROJECT_ROOT / "data" / "annotations" / "captions_flickr30k.csv"
+    images_dir = PROJECT_ROOT / "data" / "raw" / "flickr30k" / "flickr30k-images"
+    convnext_path = PROJECT_ROOT / "data" / "raw" / "convnext_tiny_1k_224_ema.pth"
+    out_path = PROJECT_ROOT / "output" / "features" / "image_features.pth"
 
     filenames, splits = list_gallery_images(csv_path)
     if limit is not None:            
         filenames, splits = filenames[:limit], splits[:limit]
     dataset = GalleryImageDataset(images_dir, filenames, get_image_transform())
-    resnet = load_resnet(resnet_path)
-    features = extract_features(resnet, dataset, batch_size=32)
+    convnext = load_convnext(convnext_path)
+    features = extract_features(convnext, dataset, batch_size=32)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"features": features, "filenames": filenames, "splits": splits}, out_path)
