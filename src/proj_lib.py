@@ -7,6 +7,7 @@ import os
 import random
 from datetime import datetime
 
+from sympy import true
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
@@ -53,9 +54,8 @@ def load_data(img_path=IMG_PATH, txt_path=TXT_PATH):
     txt_mean = txt_data["mean"]
     txt_cls = txt_data["cls"]
     txt_filenames = txt_data["filenames"]
-    if (
-        txt_mean.shape[0] != len(txt_filenames)
-        or txt_cls.shape[0] != len(txt_filenames)
+    if txt_mean.shape[0] != len(txt_filenames) or txt_cls.shape[0] != len(
+        txt_filenames
     ):
         raise ValueError(
             "Text feature rows must match caption metadata: "
@@ -136,6 +136,24 @@ def recall_t2i(sim, gt, k):
     topk_idx = sim.topk(k, dim=1).indices  # 每条 caption 的前 K 张图
     hit = (topk_idx == gt.unsqueeze(1)).any(dim=1)
     return hit.float().mean().item()
+
+
+def ndcg_t2i(sim, gt, k=10):
+    """文搜图的 NDCG@K（每条文字只有 1 张正确图片）。
+
+    Args:
+        sim: [n_txt, n_img] 相似度矩阵，第 i 行是第 i 条文字对所有图片的分数。
+        gt: [n_txt] 每条文字对应的正确图片的列号。
+    Returns:
+        NDCG@K 的平均值（float）。
+    """
+    rows = torch.arange(len(gt))
+    correct_score = sim[rows, gt]
+    bigger = sim > correct_score.unsqueeze(1)
+    rank = bigger.sum(dim=1) + 1
+    gain = 1.0 / torch.log2(rank.float() + 1)
+    gain = torch.where(rank <= k, gain, torch.zeros_like(gain))
+    return gain.mean().item()
 
 
 def recall_i2t(sim, gt, k):
@@ -306,3 +324,13 @@ if __name__ == "__main__":
     print(d["img_feat"].shape, d["txt_feat"].shape)
     print(len(d["caption_rows_of"]), len(d["train_img_rows"]), len(d["val_img_rows"]))
     feats = torch.load("output/features/image_features.pth")["features"]
+    sim = torch.tensor(
+        [
+            [0.9, 0.1, 0.3, 0.2],  # 第 0 条文字
+            [0.2, 0.5, 0.8, 0.1],  # 第 1 条文字
+            [0.4, 0.3, 0.2, 0.7],  # 第 2 条文字
+        ]
+    )
+    gt = torch.tensor([0, 1, 3])  # 每条文字对应的正确图片的列号
+    print(ndcg_t2i(sim, gt, k=1))  # 期望约 0.667（三条里两条命中，各得 1，一条得 0）
+    print(ndcg_t2i(sim, gt, k=10))  # 期望约 0.877（1.000 + 0.631 + 1.000 取平均）
