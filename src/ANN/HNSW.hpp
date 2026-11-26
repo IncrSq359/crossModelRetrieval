@@ -1,14 +1,14 @@
 /*
-
+HNSW的cpp实现版本，
+functions:
+    Insert(Tensor: nq)
+    Search(Tensor: nq, int K, int efSearch = -1)
 */
 
 #include <algorithm>
-#include <bitset>
 #include <cmath>
-#include <iostream>
-#include <map>
+#include <deque>
 #include <numeric>
-#include <queue>
 #include <random>
 #include <vector>
 using namespace std;
@@ -17,21 +17,22 @@ struct Node;
 
 // 堆，c=0为小根堆，c=1为大根堆
 struct Heap {
-    int lc, flag, sz = 0, c;
+    int lc, flag, sz = 0, c, dim;
     vector<int> heap;
     vector<float> distan;
-    vector<float> q;
+    float* q;
     vector<vector<Node>>* g;
 
     template <typename T>
     bool cmp(T x, T y) {
         return c == 0 ? x < y : x > y;
     }
-    Heap(int lc, int flag, int c, vector<float>& q, vector<vector<Node>>* g) {
+    Heap(int lc, int flag, int c, int dim, float* q, vector<vector<Node>>* g) {
         this->lc = lc;
         this->flag = flag;
         this->c = c;
         this->q = q;
+        this->dim = dim;
         this->g = g;
     }
     // 需要读 Node::data，定义放在 Node 完整定义之后
@@ -83,31 +84,30 @@ struct Heap {
 
 struct Node {
     int id;
-    vector<float> data;
+    float* data;
     Heap edges;  // 小根堆
     int next;
 };
 
 // flag: 0采用欧氏距离，1采用余弦距离
-float dis(const vector<float>& x, const vector<float>& q, int flag) {
+float dis(const float* x, const float* q, int len, int flag) {
     if (flag == 0) {
-        int len = x.size();
         float res = 0;
         for (int i = 0; i < len; i++) {
             res += (x[i] - q[i]) * (x[i] - q[i]);
         }
         return res;
     } else {
-        float dot = inner_product(x.begin(), x.end(), q.begin(), 0.0f);
-        float A = inner_product(x.begin(), x.end(), x.begin(), 0.0f);
-        float B = inner_product(q.begin(), q.end(), q.begin(), 0.0f);
+        float dot = inner_product(x, x + len, q, 0.0f);
+        float A = inner_product(x, x + len, x, 0.0f);
+        float B = inner_product(q, q + len, q, 0.0f);
         return (A == 0.f || B == 0.f) ? 1.f : 1.f - dot / (sqrtf(A) * sqrtf(B));
     }
 }
 
 inline void Heap::push(int idx, float d) {
     heap.push_back(idx);
-    distan.push_back(d != -1 ? d : dis((*g)[lc][idx].data, q, flag));
+    distan.push_back(d != -1 ? d : dis((*g)[lc][idx].data, q, this->dim, flag));
     ++sz;
     sortUp(sz - 1);
 }
@@ -130,8 +130,11 @@ class HNSWindex {
         return floor(-log(1.0f - u) * this->ml);
     }
 
-    void Insert(vector<vector<float>>& nq) {
-        for (auto& q : nq) {
+    void Insert(float* nq, size_t n) {
+        for (size_t k = 0; k < n; k++) {
+            // 拷贝一份由索引自己持有：调用方的缓冲区（尤其是 pybind11 的临时
+            // array）在 Insert 返回后随时可能释放，只存裸指针会读到野内存
+            float* q = this->Store(nq + k * this->dim);
             vector<int> ep = {this->ep};
             int L = topLayer;
             int l = RandomLayer();
@@ -145,7 +148,8 @@ class HNSWindex {
             if (l > L) {
                 for (int i = L + 1; i <= l; i++) {
                     hnsw.emplace_back(vector<Node>());
-                    Node nodeq = {nid, q, Heap(i, this->flag, 0, q, &hnsw), 0};
+                    Node nodeq = {
+                        nid, q, Heap(i, this->flag, 0, this->dim, q, &hnsw), 0};
                     hnsw[i].emplace_back(nodeq);
                     if (i != L + 1)
                         hnsw[i][0].next = 0;
@@ -155,7 +159,8 @@ class HNSWindex {
             }
             int last = -1;
             for (int lc = min(L, l); lc >= 0; lc--) {
-                Node nodeq = {nid, q, Heap(lc, this->flag, 0, q, &hnsw), 0};
+                Node nodeq = {nid, q,
+                              Heap(lc, this->flag, 0, this->dim, q, &hnsw), 0};
                 hnsw[lc].emplace_back(nodeq);
                 int idx = hnsw[lc].size() - 1;
                 if (l > L && lc == L) {
@@ -190,14 +195,12 @@ class HNSWindex {
         }
     }
 
-    pair<vector<vector<float>>, vector<vector<int>>>
-    KNNSearch(vector<vector<float>>& nq, int K, int ef) {
-        vector<vector<int>> I(nq.size());
-        vector<vector<float>> D(nq.size());
+    void KNNSearch(float* nq, int n, int K,float* D,int* I ,int ef = -1) {
         if (hnsw.empty())
-            return {D, I};  // 空索引
-        for (int j = 0; j < (int)nq.size(); j++) {
-            auto q = nq[j];
+            return ;  // 空索引
+        float* q = nq;
+        ef = ef == -1 ? this->efSearch : ef;
+        for (int j = 0; j < n; j++, q += this->dim) {
             vector<int> ep = {this->ep};
             int L = topLayer;
             for (int i = L; i > 0; i--) {
@@ -211,17 +214,16 @@ class HNSWindex {
                 W.sortUp(i);
             int kk = min(K, W.sz);
             for (int i = 0; i < kk; i++) {
-                I[j].emplace_back(hnsw[0][W.heap[0]].id);
-                D[j].emplace_back(W.distan[0]);
+                I[j * K + i] = hnsw[0][W.heap[0]].id;
+                D[j * K + i] = W.distan[0];
                 W.pop();
             }
         }
-        return {D, I};
     }
     // 返回大根堆
-    Heap SearchLayer(vector<float>& q, vector<int> ep, int ef, int lc) {
-        Heap candidates(lc, flag, 0, q, &hnsw);  // 小根堆
-        Heap W(lc, flag, 1, q, &hnsw);           // 大根堆
+    Heap SearchLayer(float* q, vector<int> ep, int ef, int lc) {
+        Heap candidates(lc, flag, 0, this->dim, q, &hnsw);  // 小根堆
+        Heap W(lc, flag, 1, this->dim, q, &hnsw);           // 大根堆
         vector<char> visited(hnsw[lc].size(), 0);
         for (int idx : ep) {
             candidates.push(idx);
@@ -238,7 +240,8 @@ class HNSWindex {
             for (int i = 0; i < edges.sz; i++) {
                 if (visited[edges.heap[i]] == 0) {
                     visited[edges.heap[i]] = 1;
-                    float dise = dis(hnsw[lc][edges.heap[i]].data, q, flag);
+                    float dise =
+                        dis(hnsw[lc][edges.heap[i]].data, q, this->dim, flag);
                     if (W.sz < ef || dise < f.second) {
                         candidates.push(edges.heap[i], dise);
                         W.push(edges.heap[i], dise);
@@ -250,7 +253,7 @@ class HNSWindex {
         }
         return W;
     }
-    Heap SelectNeighborsHeuristic(vector<float>& q,
+    Heap SelectNeighborsHeuristic(float* q,
                                   Heap& C,
                                   int M,
                                   int lc,
@@ -262,7 +265,7 @@ class HNSWindex {
             for (int i = 0; i < W.sz; i++)
                 W.sortUp(i);
         }
-        Heap R(lc, this->flag, 0, q, &hnsw);
+        Heap R(lc, this->flag, 0, this->dim, q, &hnsw);
         if (exC) {
             for (int idx : C.heap) {
                 Heap& neighbors = hnsw[lc][idx].edges;
@@ -278,15 +281,16 @@ class HNSWindex {
                 }
             }
         }
-        Heap Wd(lc, this->flag, 0, q, &hnsw);
+        Heap Wd(lc, this->flag, 0, this->dim, q, &hnsw);
         while (W.sz > 0 && R.sz < M) {
             auto e = W.top();
             W.pop();
             int k = 1;
             float dise = e.second;
             for (int i = 0; i < R.sz; i++) {
-                float disr = dis(hnsw[lc][e.first].data,
-                                 hnsw[lc][R.heap[i]].data, this->flag);
+                float disr =
+                    dis(hnsw[lc][e.first].data, hnsw[lc][R.heap[i]].data,
+                        this->dim, this->flag);
                 if (disr < dise) {
                     k = 0;
                     break;
@@ -308,6 +312,14 @@ class HNSWindex {
     }
 
    private:
+    // 每个点一份独立的 vector：地址稳定（deque 尾插不移动已有元素），
+    // 而且每份数据自身连续，Node::data 才能按 dim 个 float 读。
+    // （注意不能用 deque<float>：MSVC 的 deque 每块只有 4 个 float，不连续）
+    float* Store(const float* src) {
+        data_store.emplace_back(src, src + this->dim);
+        return data_store.back().data();
+    }
+
     int efConstruction, efSearch;
     int dim, m;
     int tolidx = 0;
@@ -315,8 +327,9 @@ class HNSWindex {
     int flag = 0;
     float ml;
     int ep = 0;
+    deque<vector<float>> data_store;
     vector<vector<Node>> hnsw;  // layer,point
     mt19937 generator;
 };
-uniform_real_distribution<float> HNSWindex::dist =
+inline uniform_real_distribution<float> HNSWindex::dist =
     uniform_real_distribution<float>(0, 1);

@@ -31,3 +31,4 @@ output/
 Thumbs.db
 
 node_modules/
+build/

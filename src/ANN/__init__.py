@@ -1,1 +1,2 @@
-from .HNSW_faiss import Index
+from .HNSW import Index
+from .hnsw_cpp import HNSW

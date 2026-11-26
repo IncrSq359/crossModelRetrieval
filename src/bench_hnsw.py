@@ -82,7 +82,7 @@ def build_hnsw(m, ef_construction):
         (index, build_time) 二元组。
     """
     # efSearch 这里随便给一个值，查询时会用 search 的临时参数覆盖
-    index = Index(gallery_np.shape[1], m, ef_construction, 64)
+    index = Index(gallery_np.shape[1], m, ef_construction, 64,1,0)
 
     t0 = time.perf_counter()
     index.add(gallery_np)  # HNSW 在 add 时建图
