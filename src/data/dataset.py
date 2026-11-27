@@ -104,23 +104,25 @@ class ImageListDataset(Dataset):
 
 
 class UniqueImageBatchSampler(Sampler):
-    """每个 batch 内图片不重复的批采样器。
+    """每个 batch 内图片不重复、且一轮能把每张图的 caption 都用上的批采样器。
 
     InfoNCE 把同 batch 的其它样本当负例：若同一张图的两条 caption 落进
     同一个 batch，它们就互为「假负例」，会把 loss 往错误方向拉。
     这个采样器保证一个 batch 里每张图最多出现一次。
 
-    每个 epoch 调用 set_epoch(epoch)：重新洗牌图片顺序，并为每张图
-    重新随机抽 1 条 caption（5 条 caption 在多个 epoch 里被轮到的机会）。
+    每个 epoch 调用 set_epoch(epoch)：重新洗牌图片顺序，并给每张图的
+    caption 生成一个随机排列；第 p 遍取排列里的第 p 条。因此
+    passes >= caption 条数时，一个 epoch 内 5 条 caption 各被用一次。
     """
 
-    def __init__(self,rows,batch_size,seed=0,drop_last=True):
+    def __init__(self,rows,batch_size,seed=0,drop_last=True,passes=1):
         """
         Args:
             rows: Flickr30kDataset.rows，每项含 "filename"。
             batch_size: 每个 batch 的图片数。
             seed: 随机种子。
             drop_last: 是否丢掉最后一个不足 batch_size 的批。
+            passes: 每个 epoch 遍历几遍 caption（Flickr30k 每图 5 条，给 5 即可）。
         """
         groups={}
         for idx,row in enumerate(rows):
@@ -129,6 +131,7 @@ class UniqueImageBatchSampler(Sampler):
         self.batch_size=batch_size
         self.seed=seed
         self.drop_last=drop_last
+        self.passes=max(1,int(passes))
         self.epoch=0
 
     def set_epoch(self,epoch):
@@ -136,21 +139,27 @@ class UniqueImageBatchSampler(Sampler):
 
     def __len__(self):
         if self.drop_last:
-            return len(self.groups)//self.batch_size
-        return math.ceil(len(self.groups)/self.batch_size)
+            per_pass=len(self.groups)//self.batch_size
+        else:
+            per_pass=math.ceil(len(self.groups)/self.batch_size)
+        return per_pass*self.passes
 
     def __iter__(self):
         rng=random.Random(self.seed+self.epoch)
-        order=list(range(len(self.groups)))
-        rng.shuffle(order)
-        batch=[]
-        for gi in order:
-            batch.append(rng.choice(self.groups[gi]))
-            if len(batch)==self.batch_size:
+        # 每张图的 caption 各生成一个随机排列，第 p 遍取第 p 条
+        perms=[rng.sample(group,len(group)) for group in self.groups]
+        for p in range(self.passes):
+            order=list(range(len(self.groups)))
+            rng.shuffle(order)
+            batch=[]
+            for gi in order:
+                group=perms[gi]
+                batch.append(group[p%len(group)])
+                if len(batch)==self.batch_size:
+                    yield batch
+                    batch=[]
+            if batch and not self.drop_last:
                 yield batch
-                batch=[]
-        if batch and not self.drop_last:
-            yield batch
 
     
 def make_one_caption_batches(dataset,batch_size,seed):

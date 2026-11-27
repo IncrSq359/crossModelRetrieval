@@ -4,6 +4,10 @@
 阶段 2（剩余 epoch）：解冻 ConvNeXt.stages[-1] + ConvNeXt.norm + BERT.layers[-2:]，
     编码器用小 lr，投影层 lr 降一档，联合训练。
 
+注意 1 个 epoch = 把每张图的 caption 遍历 --caption-passes 遍（默认 5）。
+Flickr30k 每图 5 条 caption，所以默认一轮就用满全部 145000 条图文对；
+想回到「每图每轮只抽 1 条」的老行为用 --caption-passes 1。
+
 --------------------------------------------------------------------------
 启动参数预设（--preset，可切换）
 --------------------------------------------------------------------------
@@ -23,6 +27,7 @@
 每次运行都会在 --out 目录下生成三份记录：
     train_<时间戳>.log   完整控制台输出（含每步 loss、评估指标、异常栈）
     metrics.csv          每个 epoch 一行，方便直接画曲线/丢进 Excel
+                         （默认同时记录 train_* 指标和 gap_* = train - val）
     train_log.jsonl      同上但为 JSON，保留全部字段
 另外会写一份 config.json（本次全部超参 + 环境信息），便于复现。
 
@@ -85,8 +90,8 @@ PRESETS = {
         epochs=20, stage1_epochs=2, lr_proj=1e-3, lr_enc=3e-5,
     ),
     "cloud-5090-long": dict(
-        batch_size=384, accum=1, workers=20, eval_batch_size=256, prefetch_factor=2,
-        epochs=30, stage1_epochs=2, lr_proj=1.5e-3, lr_enc=4e-5,
+        batch_size=512, accum=1, workers=20, eval_batch_size=256, prefetch_factor=2,
+        epochs=30, stage1_epochs=2, lr_proj=1.5e-3, lr_enc=4e-5,caption_passes=5
     ),
     "smoke": dict(
         batch_size=8, accum=1, workers=2, eval_batch_size=32, prefetch_factor=2,
@@ -146,6 +151,14 @@ def parse_args(argv=None):
     p.add_argument("--log-interval", type=int, default=20)
     p.add_argument("--val-every", type=int, default=1)
     p.add_argument("--save-every", type=int, default=1)
+    # 评估
+    p.add_argument("--eval-train", action=argparse.BooleanOptionalAction, default=True,
+                   help="每次评估时一并算训练集指标（用 --no-eval-train 关掉）")
+    p.add_argument("--eval-train-subset", type=int, default=0,
+                   help="训练集评估的候选池大小；0 表示与 val 对齐（同样的图片数，数字才可比）")
+    # 数据
+    p.add_argument("--caption-passes", type=int, default=1,
+                   help="每个 epoch 遍历几遍 caption（Flickr30k 每图 5 条，5 = 一轮用完；1 = 老行为）")
     # 杂项
     p.add_argument("--device", default="auto")
     p.add_argument("--seed", type=int, default=42)
@@ -271,13 +284,21 @@ def make_scheduler(opt, total_steps, warmup_steps):
 
 
 @torch.no_grad()
-def evaluate(model, val_ds, args, device, amp_dtype, workers):
-    """在 val 划分上算 T2I / I2T 的 Recall 与 NDCG（候选池 = 全部 val 图片）。"""
+def evaluate(model, ds, args, device, amp_dtype, workers, max_images=0):
+    """在一个划分上算 T2I / I2T 的 Recall 与 NDCG（候选池 = 该划分的图片）。
+
+    Args:
+        ds: Flickr30kDataset。只用它的 rows 和预编码好的 input_ids/attention_mask，
+            不会调用 __getitem__，所以传 train 集也不会带入随机增广。
+        max_images: 只用前 N 张图当候选池（0 表示全用）。
+            train 集有 29000 张图，全上会构造 145000x29000 的相似度矩阵；
+            要和 val 的数字可比，就取同样多的图（默认 1014）。
+    """
     model.eval()
-    indexed = list(enumerate(val_ds.rows))
+    indexed = list(enumerate(ds.rows))
     filenames = list(dict.fromkeys(r["filename"] for _, r in indexed))
-    if args.limit_val:
-        filenames = filenames[: args.limit_val]
+    if max_images:
+        filenames = filenames[:max_images]
     pos = {fn: i for i, fn in enumerate(filenames)}
     sel = [(i, r) for i, r in indexed if r["filename"] in pos]
     gt = torch.tensor([pos[r["filename"]] for _, r in sel], dtype=torch.long)
@@ -298,15 +319,15 @@ def evaluate(model, val_ds, args, device, amp_dtype, workers):
             img_embs.append(model.encode_image(images).float())
     img_embs = torch.cat(img_embs, dim=0)
 
-    # ---------- 查询（val 的全部 caption） ----------
-    if val_ds.input_ids is not None:
+    # ---------- 查询（该划分的全部 caption） ----------
+    if ds.input_ids is not None:
         row_ids = [i for i, _ in sel]
-        ids_all = val_ds.input_ids[row_ids]
-        mask_all = val_ds.attention_mask[row_ids]
+        ids_all = ds.input_ids[row_ids]
+        mask_all = ds.attention_mask[row_ids]
     else:
-        enc = val_ds.tokenizer(
+        enc = ds.tokenizer(
             [r["caption"] for _, r in sel], padding="max_length", truncation=True,
-            max_length=val_ds.max_len, return_tensors="pt",
+            max_length=ds.max_len, return_tensors="pt",
         )
         ids_all, mask_all = enc["input_ids"], enc["attention_mask"]
 
@@ -445,7 +466,9 @@ def run(args):
     )
     print(f"[data] train caption {len(train_ds)} 条 / val caption {len(val_ds)} 条")
 
-    sampler = UniqueImageBatchSampler(train_ds.rows, args.batch_size, seed=args.seed)
+    sampler = UniqueImageBatchSampler(
+        train_ds.rows, args.batch_size, seed=args.seed, passes=args.caption_passes
+    )
     train_loader = DataLoader(
         train_ds, batch_sampler=sampler, num_workers=workers,
         pin_memory=(device.type == "cuda"),
@@ -457,8 +480,8 @@ def run(args):
     if args.limit_batches:
         batches_per_epoch = min(batches_per_epoch, args.limit_batches)
     steps_per_epoch = math.ceil(batches_per_epoch / args.accum)
-    print(f"[data] {len(sampler)} 个 batch/epoch（每 batch {args.batch_size} 图），"
-          f"实际每 epoch {batches_per_epoch} 步")
+    print(f"[data] {len(sampler)} 个 batch/epoch（每 batch {args.batch_size} 图，"
+          f"caption 遍历 {args.caption_passes} 遍），实际每 epoch {batches_per_epoch} 步")
 
     # ---------- 断点续训 ----------
     start_epoch, best, resume_ckpt = 0, -1.0, None
@@ -582,11 +605,31 @@ def run(args):
               + (f" peak {record['peak_gb']}GB" if "peak_gb" in record else ""))
 
         if (epoch + 1) % args.val_every == 0:
-            metrics = evaluate(model, val_ds, args, device, amp_dtype, workers)
+            n_eval_img = args.limit_val or 1014  # val 划分就是 1014 张（Flickr30k 1k）
+            metrics = evaluate(model, val_ds, args, device, amp_dtype, workers,
+                               max_images=args.limit_val)
+            print("  [val]   " + " ".join(f"{k} {v:.4f}" for k, v in metrics.items()))
             score = 0.5 * (metrics["T2I@1"] + metrics["I2T@1"])
             record.update({k: round(v, 5) for k, v in metrics.items()})
             record["score"] = round(score, 5)
-            print("  " + " ".join(f"{k} {v:.4f}" for k, v in metrics.items()))
+
+            if args.eval_train:
+                # 候选池规模和 val 保持一致，否则两边的 R@10 没法直接比
+                subset = args.eval_train_subset or n_eval_img
+                train_metrics = evaluate(model, train_ds, args, device, amp_dtype, workers,
+                                         max_images=subset)
+                print(f"  [train] " + " ".join(f"{k} {v:.4f}" for k, v in train_metrics.items())
+                      + f"  (前 {subset} 张图)")
+                record.update({f"train_{k}": round(v, 5) for k, v in train_metrics.items()})
+                for key in ("T2I@10", "I2T@10"):
+                    if key in metrics and key in train_metrics:
+                        record[f"gap_{key}"] = round(
+                            train_metrics[key] - metrics[key], 5)
+                gaps = [f"{k} {record['gap_' + k]:+.4f}"
+                        for k in ("T2I@10", "I2T@10") if "gap_" + k in record]
+                if gaps:
+                    print("  [gap]   " + " ".join(gaps) + "  (train - val)")
+
             if score > best:
                 best = score
                 save_checkpoint(out_dir / "best.pt", model, opt, sched, scaler, epoch, best, args, stage)
