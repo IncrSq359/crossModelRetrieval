@@ -95,8 +95,9 @@ PRESETS = {
         epochs=20, stage1_epochs=2, lr_proj=1e-3, lr_enc=3e-5,
     ),
     "cloud-5090-long": dict(
-        batch_size=512, accum=1, workers=20, eval_batch_size=256, prefetch_factor=2,
-        epochs=30, stage1_epochs=2, lr_proj=1.5e-3, lr_enc=4e-5,caption_passes=5
+        batch_size=768, accum=1, workers=20, eval_batch_size=256, prefetch_factor=2,
+        epochs=15, stage1_epochs=2, lr_proj=1.5e-3, lr_enc=4e-5,caption_passes=5,
+        weight_decay=0.05
     ),
     "smoke": dict(
         batch_size=8, accum=1, workers=2, eval_batch_size=32, prefetch_factor=2,

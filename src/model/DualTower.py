@@ -42,10 +42,12 @@ class DualTowerModel(nn.Module):
         self.embed_dim = embed_dim
         self.proj_img = nn.Linear(768, embed_dim)  # 图像投影层（可训练）
         self.proj_txt = nn.Linear(1536, embed_dim)  # mean + CLS 文本投影层（可训练）
+        self.dropout = nn.Dropout(0.1)
 
     def encode_image(self, images):
         """图像 -> 单位向量 [B, embed_dim]。"""
         img_feat = self.convnext(images)  # [B, 768]
+        img_feat = self.dropout(img_feat)
         return F.normalize(self.proj_img(img_feat), dim=1, p=2)
 
     def encode_text(self, input_ids, attention_mask):
@@ -54,6 +56,7 @@ class DualTowerModel(nn.Module):
         cls_feat = last_hidden[:, 0, :]
         mean_feat = masked_mean_pool(last_hidden, attention_mask)
         txt_feat = torch.cat((mean_feat, cls_feat), dim=1)  # [B, 1536]
+        txt_feat = self.dropout(txt_feat)
         return F.normalize(self.proj_txt(txt_feat), dim=1, p=2)
 
     def forward(self, images, input_ids, attention_mask):
