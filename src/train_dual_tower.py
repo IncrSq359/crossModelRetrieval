@@ -22,14 +22,19 @@ Flickr30k 每图 5 条 caption，所以默认一轮就用满全部 145000 条图
     bash scripts/train.sh cloud-5090
 
 --------------------------------------------------------------------------
-日志
+产物与命名（多次训练全部保留，不会互相覆盖）
 --------------------------------------------------------------------------
-每次运行都会在 --out 目录下生成三份记录：
-    train_<时间戳>.log   完整控制台输出（含每步 loss、评估指标、异常栈）
-    metrics.csv          每个 epoch 一行，方便直接画曲线/丢进 Excel
-                         （默认同时记录 train_* 指标和 gap_* = train - val）
-    train_log.jsonl      同上但为 JSON，保留全部字段
-另外会写一份 config.json（本次全部超参 + 环境信息），便于复现。
+每次运行生成一个 tag（时间戳，可用 --run-name 追加可读后缀），所有文件共用它：
+
+    train_<tag>.log          完整控制台输出（每步 loss、评估指标、异常栈）
+    best_<tag>.pt            按 val 指标选出的最优权重
+    last_<tag>.pt            最近一个 epoch 的权重（用于 --resume）
+    metrics_<tag>.csv        每个 epoch 一行，可直接画曲线
+    train_log_<tag>.jsonl    同上但为 JSON，保留全部字段
+    config_<tag>.json        本次全部超参 + 环境信息，便于复现
+
+例：--run-name lr3e5 → best_20261128_060102_lr3e5.pt 对应
+    train_20261128_060102_lr3e5.log
 
 --------------------------------------------------------------------------
 云端依赖
@@ -147,7 +152,9 @@ def parse_args(argv=None):
     p.add_argument("--grad-clip", type=float, default=1.0)
     # 记录
     p.add_argument("--out", default=str(PROJECT_ROOT / "output" / "dual_tower"))
-    p.add_argument("--log-file", default="", help="空表示 <out>/train_<时间戳>.log；none 表示不写文件")
+    p.add_argument("--log-file", default="", help="空表示 <out>/train_<tag>.log；可含 {tag} 占位；none 表示不写文件")
+    p.add_argument("--run-name", default="",
+                   help="本次运行的名字，会拼进所有产物文件名（如 best_<tag>_lr3e5.pt），便于区分多次实验")
     p.add_argument("--log-interval", type=int, default=20)
     p.add_argument("--val-every", type=int, default=1)
     p.add_argument("--save-every", type=int, default=1)
@@ -519,10 +526,13 @@ def run(args):
         except (ValueError, KeyError) as exc:
             print(f"[resume] 优化器状态不兼容，按新优化器继续：{exc}")
 
-    # ---------- 记录文件 ----------
-    log_path = out_dir / "train_log.jsonl"
-    csv_path = out_dir / "metrics.csv"
-    cfg_path = out_dir / "config.json"
+    # ---------- 记录文件（全部带 tag，多次训练互不覆盖） ----------
+    tag = args.run_tag
+    log_path = out_dir / f"train_log_{tag}.jsonl"
+    csv_path = out_dir / f"metrics_{tag}.csv"
+    cfg_path = out_dir / f"config_{tag}.json"
+    best_path = out_dir / f"best_{tag}.pt"
+    last_path = out_dir / f"last_{tag}.pt"
     env_info = {
         "torch": torch.__version__,
         "cuda": torch.version.cuda,
@@ -632,17 +642,23 @@ def run(args):
 
             if score > best:
                 best = score
-                save_checkpoint(out_dir / "best.pt", model, opt, sched, scaler, epoch, best, args, stage)
-                print(f"  -> 新的 best ({best:.4f}) 已保存")
+                save_checkpoint(best_path, model, opt, sched, scaler, epoch, best, args, stage)
+                print(f"  -> 新的 best ({best:.4f}) 已保存 {best_path.name}")
 
         history.append(record)
         append_jsonl(log_path, record)
         write_metrics_csv(csv_path, history)
         if args.save_every and (epoch + 1) % args.save_every == 0:
-            save_checkpoint(out_dir / "last.pt", model, opt, sched, scaler, epoch, best, args, stage)
+            save_checkpoint(last_path, model, opt, sched, scaler, epoch, best, args, stage)
 
-    save_checkpoint(out_dir / "last.pt", model, opt, sched, scaler, args.epochs - 1, best, args, stage)
-    print(f"[done] best={best:.4f} 输出目录 {out_dir}")
+    save_checkpoint(last_path, model, opt, sched, scaler, args.epochs - 1, best, args, stage)
+    print(f"[done] best={best:.4f}")
+    if best_path.exists():
+        print(f"[done] tag={tag} 权重 {best_path.name} / {last_path.name}")
+    else:
+        print(f"[done] tag={tag} 本次没有超过历史 best，未生成 {best_path.name}；"
+              f"最终权重在 {last_path.name}")
+    print(f"[done] 日志与指标 {log_path.name} / {csv_path.name} / {cfg_path.name}，目录 {out_dir}")
 
 
 def main(argv=None):
@@ -650,15 +666,25 @@ def main(argv=None):
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # 本次运行的所有产物（权重/日志/指标）共用同一个 tag，互不覆盖，
+    # 文件名一一对应：train_<tag>.log ↔ best_<tag>.pt / last_<tag>.pt
+    tag = time.strftime("%Y%m%d_%H%M%S")
+    if args.run_name:
+        tag = f"{tag}_{args.run_name}"
+    args.run_tag = tag
+
     log_file = None
     old_out, old_err = sys.stdout, sys.stderr
     if args.log_file.lower() != "none":
-        log_path = Path(args.log_file) if args.log_file else out_dir / f"train_{time.strftime('%Y%m%d_%H%M%S')}.log"
+        if args.log_file:
+            log_path = Path(args.log_file.replace("{tag}", tag))
+        else:
+            log_path = out_dir / f"train_{tag}.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_file = open(log_path, "a", encoding="utf-8", buffering=1)
         sys.stdout = _Tee(old_out, log_file)
         sys.stderr = _Tee(old_err, log_file)
-        print(f"[log] 完整输出同时写入 {log_path}")
+        print(f"[log] tag={tag} 完整输出同时写入 {log_path}")
 
     try:
         run(args)
