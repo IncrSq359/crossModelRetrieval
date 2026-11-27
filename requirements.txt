@@ -1,3 +1,14 @@
+# =============================================================================
+# NOTE: this file is a conda explicit export from Windows and only works on win-64
+#       (platform: win-64, CUDA 13.5 win builds, torch marked as pypi_0).
+#
+#       On a Linux cloud box use instead:
+#           bash scripts/setup_env.sh
+#       or, step by step:
+#           conda env create -f environment.yml
+#           pip install --index-url https://download.pytorch.org/whl/cu130 torch torchvision
+#           pip install -r requirements-linux.txt
+# =============================================================================
 # This file may be used to create an environment using:
 # $ conda create --name <env> --file <this file>
 # platform: win-64

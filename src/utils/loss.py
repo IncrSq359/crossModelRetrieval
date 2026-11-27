@@ -1,5 +1,5 @@
 import torch
-from torch import functional as F
+from torch.nn import functional as F
 
 def info_nce_loss(img_emb, txt_emb, temperature=0.07):
     """双向 InfoNCE 损失。
@@ -12,7 +12,7 @@ def info_nce_loss(img_emb, txt_emb, temperature=0.07):
         标量损失。
     """
     logits = img_emb @ txt_emb.T / temperature  # [B, B]，对角线是正样本
-    labels = torch.arange(img_emb.shape[0])  # 第 i 行的正确答案是第 i 列
+    labels = torch.arange(img_emb.shape[0], device=img_emb.device)  # 第 i 行的正确答案是第 i 列
     loss_i2t = F.cross_entropy(logits, labels)  # 按行：图找文
     loss_t2i = F.cross_entropy(logits.T, labels)  # 按列：文找图
     return (loss_i2t + loss_t2i) / 2

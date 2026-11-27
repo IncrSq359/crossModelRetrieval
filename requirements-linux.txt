@@ -1,0 +1,21 @@
+# 运行时依赖（Linux / 云端）
+#
+#   pip install -r requirements-linux.txt
+#
+# 注意：torch / torchvision 不在这里，必须先按显卡对应的 CUDA 索引导入：
+#   pip install --index-url https://download.pytorch.org/whl/cu130 torch torchvision
+# （RTX 50 系是 sm_120，需要 cu128 或 cu130 的 wheel；详见 scripts/setup_env.sh）
+
+transformers==5.22.1
+# transformers 5.22 要求 huggingface-hub>=1.31,<3
+huggingface-hub>=1.31,<3
+numpy>=2.0
+pillow>=11.0
+tqdm>=4.66
+
+# HNSW 对比实验用；faiss-cpu 提供 cp310-abi3 wheel，py3.13 可直接装。
+# 只是训练投影层/双塔的话可以不装。
+faiss-cpu>=1.15
+
+# 只有要编译 src/ANN 的 C++ 扩展时才需要
+pybind11>=2.13

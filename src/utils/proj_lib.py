@@ -4,7 +4,12 @@
 """
 
 import os
-from ..data.dataset import load_data
+
+try:
+    from ..data.dataset import load_data
+except ImportError:  # 以 src 为顶层包运行时（python src/xxx.py）
+    from data.dataset import load_data
+
 import torch.nn as nn
 import torch
 import torch.nn.functional as F

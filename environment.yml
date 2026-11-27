@@ -1,0 +1,20 @@
+# Linux / 云平台的 conda 环境定义
+#
+#   conda env create -f environment.yml          # 只装 python + 编译工具
+#   bash scripts/setup_env.sh                    # 推荐：一条命令装完（含 torch/依赖/自检）
+#
+# torch / torchvision 不写在这里：必须从 PyTorch 的 CUDA 专用索引安装
+# （sm_120 的 RTX 50 系需要 cu128/cu130 的 wheel），交给 setup_env.sh 处理。
+name: cmr
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.13
+  - pip>=24
+  - setuptools>=70
+  - wheel
+  # 只有要编译 src/ANN 的 C++ 扩展时才需要；纯训练可以删掉这两行
+  - cmake>=3.21
+  - ninja

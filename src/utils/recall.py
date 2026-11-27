@@ -1,5 +1,5 @@
 import torch
-from proj_lib import project_and_normalize
+from .proj_lib import project_and_normalize
 
 def recall_t2i(sim, gt, k):
     """文搜图的 Recall@K：正确图片是否排进前 K 名。

@@ -1,7 +1,13 @@
 import torch
 import random
 from torchvision import transforms
-from ..utils.proj_lib import project_and_normalize
+
+try:
+    # python -m src.train_dual_tower（以项目根为顶层包）
+    from ..utils.proj_lib import project_and_normalize
+except ImportError:
+    # python src/xxx.py（以 src 为顶层，data/utils/model 互为平级包）
+    from utils.proj_lib import project_and_normalize
 
 IMAGENET_MEAN=[0.485,0.456,0.406]
 IMAGENET_STD=[0.229,0.224,0.225]
@@ -24,6 +30,23 @@ def get_image_transform():
         transforms.Normalize(mean=IMAGENET_MEAN,std=IMAGENET_STD)
     ])
     return transform
+
+def get_train_transform():
+    """构建训练用的随机增广流水线（解冻编码器时必用，否则小数据必然过拟合）。
+
+    只用「不改变语义」的增广：随机裁剪缩放 + 水平翻转。
+    不做颜色抖动——颜色在图文检索里本身是有效线索。
+
+    Returns:
+        torchvision.transforms.Compose 流水线。
+    """
+    return transforms.Compose([
+        transforms.RandomResizedCrop(224, scale=(0.5, 1.0)),
+        transforms.RandomHorizontalFlip(0.5),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+    ])
+
 
 def build_eval_set(data, proj_img, proj_txt, img_rows):
     """构造评测用的图库、查询向量和标准答案。

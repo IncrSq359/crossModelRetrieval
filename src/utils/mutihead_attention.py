@@ -45,7 +45,8 @@ class mutihead_attention(nn.Module):
         attn_w = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.dim)
         if mask is not None:
             mask = mask.repeat_interleave(self.head, dim=0)
-            attn_w = attn_w.masked_fill(mask == 0, -1e9)
+            # 用 dtype 的可表示最小值而不是 -1e9：fp16 下 -1e9 会溢出成 -inf/报错
+            attn_w = attn_w.masked_fill(mask == 0, torch.finfo(attn_w.dtype).min)
         attn_w = torch.softmax(attn_w, dim=-1)
         output = torch.matmul(attn_w, v)
         output = self.transpose_inv(output)

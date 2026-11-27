@@ -12,6 +12,7 @@ venv/
 # ---- 数据：Flickr30k 体量很大（压缩包约 4.4GB + 解压图片约 4.4GB），一律不入库 ----
 # /data/raw/ 存放原始下载物（压缩包、官方标注 CSV、解压图片、预训练权重缓存）
 /data/raw/*
+/data/data_store
 !/data/raw/.gitkeep
 !/data/annotations/.gitkeep
 
