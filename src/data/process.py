@@ -41,7 +41,7 @@ def get_train_transform():
         torchvision.transforms.Compose 流水线。
     """
     return transforms.Compose([
-        transforms.RandomResizedCrop(224, scale=(0.4, 1.0)),
+        transforms.RandomResizedCrop(224, scale=(0.6, 1.0)),
         transforms.RandomHorizontalFlip(0.5),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
