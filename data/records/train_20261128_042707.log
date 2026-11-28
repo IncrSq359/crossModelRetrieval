@@ -1,0 +1,174 @@
+[log] 完整输出同时写入 /root/autodl-tmp/crossModelRetrieval/output/dual_tower/train_20261128_042707.log
+[args] preset=cloud-5090
+[args] {"csv": "/root/autodl-tmp/crossModelRetrieval/data/annotations/captions_flickr30k.csv", "images": "/root/autodl-tmp/crossModelRetrieval/data/raw/flickr30k/flickr30k-images", "convnext_weights": "/root/autodl-tmp/crossModelRetrieval/data/raw/convnext_tiny_1k_224_ema.pth", "max_len": 32, "epochs": 20, "stage1_epochs": 2, "batch_size": 256, "accum": 1, "temperature": 0.07, "embed_dim": 256, "lr_proj": 0.001, "lr_enc": 3e-05, "proj_lr_scale": 0.3, "weight_decay": 0.01, "warmup_ratio": 0.05, "unfreeze_conv_stages": 1, "unfreeze_bert_layers": 2, "amp": "auto", "workers": 16, "prefetch_factor": 2, "eval_batch_size": 256, "grad_clip": 1.0, "out": "/root/autodl-tmp/crossModelRetrieval/output/dual_tower", "log_file": "", "log_interval": 20, "val_every": 1, "save_every": 1, "device": "auto", "seed": 42, "resume": "", "limit_batches": 0, "limit_val": 0}
+[env] torch 2.14.1+cu130 cuda 13.0
+[env] device=cuda
+[env] gpu=NVIDIA GeForce RTX 5090 31.4GB sm_120
+[env] /root/autodl-tmp/crossModelRetrieval/output/dual_tower 可用空间 41.5GB
+[env] amp=torch.bfloat16 workers=16 prefetch=2
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 7684.56it/s]
+[model] 可训练 0.59M / 总计 137.30M
+[data] 读取并预编码 caption ...
+[data] train caption 145000 条 / val caption 5070 条
+[data] 113 个 batch/epoch（每 batch 256 图），实际每 epoch 113 步
+  ep1 step20/113 loss 5.5365 lr_proj 1.86e-04 535.0 img/s
+  ep1 step40/113 loss 5.0185 lr_proj 3.63e-04 923.2 img/s
+  ep1 step60/113 loss 4.5665 lr_proj 5.40e-04 1215.7 img/s
+  ep1 step80/113 loss 4.2350 lr_proj 7.17e-04 1445.0 img/s
+  ep1 step100/113 loss 3.9911 lr_proj 8.94e-04 1630.3 img/s
+[epoch 1/20] stage1 loss 3.8666 16.7s peak 2.7GB
+  T2I@1 0.1329 I2T@1 0.1893 T2I@5 0.3475 I2T@5 0.4477 T2I@10 0.4783 I2T@10 0.5888 T2I-NDCG@10 0.2849 I2T-NDCG@10 0.2020
+  -> 新的 best (0.1611) 已保存
+  ep2 step20/113 loss 2.6888 lr_proj 1.00e-03 1328.2 img/s
+  ep2 step40/113 loss 2.6675 lr_proj 9.99e-04 1907.3 img/s
+  ep2 step60/113 loss 2.6393 lr_proj 9.98e-04 2226.6 img/s
+  ep2 step80/113 loss 2.6227 lr_proj 9.97e-04 2431.4 img/s
+  ep2 step100/113 loss 2.6037 lr_proj 9.95e-04 2574.5 img/s
+[epoch 2/20] stage1 loss 2.5898 10.9s peak 2.8GB
+  T2I@1 0.1866 I2T@1 0.2604 T2I@5 0.4511 I2T@5 0.5365 T2I@10 0.5822 I2T@10 0.6736 T2I-NDCG@10 0.3667 I2T-NDCG@10 0.2630
+  -> 新的 best (0.2235) 已保存
+[unfreeze] convnext 14.29M + bert 14.18M，可训练 29.06M
+  ep3 step20/113 loss 2.3960 lr_proj 6.24e-05 723.1 img/s
+  ep3 step40/113 loss 2.3434 lr_proj 1.22e-04 1133.1 img/s
+  ep3 step60/113 loss 2.3117 lr_proj 1.81e-04 1400.8 img/s
+  ep3 step80/113 loss 2.2900 lr_proj 2.41e-04 1587.8 img/s
+  ep3 step100/113 loss 2.2643 lr_proj 3.00e-04 1738.8 img/s
+[epoch 3/20] stage2 loss 2.2479 15.9s peak 2.8GB
+  T2I@1 0.2367 I2T@1 0.3077 T2I@5 0.5138 I2T@5 0.6243 T2I@10 0.6477 I2T@10 0.7416 T2I-NDCG@10 0.4247 I2T-NDCG@10 0.3195
+  -> 新的 best (0.2722) 已保存
+  ep4 step20/113 loss 2.0663 lr_proj 3.00e-04 1227.4 img/s
+  ep4 step40/113 loss 2.0447 lr_proj 2.99e-04 1684.5 img/s
+  ep4 step60/113 loss 2.0330 lr_proj 2.99e-04 1929.1 img/s
+  ep4 step80/113 loss 2.0168 lr_proj 2.98e-04 2079.5 img/s
+  ep4 step100/113 loss 2.0087 lr_proj 2.98e-04 2186.0 img/s
+[epoch 4/20] stage2 loss 1.9946 12.8s peak 2.81GB
+  T2I@1 0.2696 I2T@1 0.3698 T2I@5 0.5682 I2T@5 0.6637 T2I@10 0.6945 I2T@10 0.7791 T2I-NDCG@10 0.4661 I2T-NDCG@10 0.3560
+  -> 新的 best (0.3197) 已保存
+  ep5 step20/113 loss 1.8815 lr_proj 2.96e-04 1265.9 img/s
+  ep5 step40/113 loss 1.8711 lr_proj 2.95e-04 1713.9 img/s
+  ep5 step60/113 loss 1.8693 lr_proj 2.93e-04 1942.1 img/s
+  ep5 step80/113 loss 1.8560 lr_proj 2.92e-04 2091.3 img/s
+  ep5 step100/113 loss 1.8514 lr_proj 2.90e-04 2197.1 img/s
+[epoch 5/20] stage2 loss 1.8446 12.8s peak 2.81GB
+  T2I@1 0.2911 I2T@1 0.3994 T2I@5 0.5935 I2T@5 0.6982 T2I@10 0.7148 I2T@10 0.8156 T2I-NDCG@10 0.4902 I2T-NDCG@10 0.3849
+  -> 新的 best (0.3453) 已保存
+  ep6 step20/113 loss 1.7209 lr_proj 2.87e-04 1262.9 img/s
+  ep6 step40/113 loss 1.7252 lr_proj 2.85e-04 1700.1 img/s
+  ep6 step60/113 loss 1.7420 lr_proj 2.83e-04 1926.0 img/s
+  ep6 step80/113 loss 1.7483 lr_proj 2.80e-04 2060.6 img/s
+  ep6 step100/113 loss 1.7392 lr_proj 2.78e-04 2170.0 img/s
+[epoch 6/20] stage2 loss 1.7343 12.9s peak 2.81GB
+  T2I@1 0.3140 I2T@1 0.4083 T2I@5 0.6174 I2T@5 0.7278 T2I@10 0.7316 I2T@10 0.8235 T2I-NDCG@10 0.5107 I2T-NDCG@10 0.4041
+  -> 新的 best (0.3611) 已保存
+  ep7 step20/113 loss 1.6670 lr_proj 2.74e-04 1264.8 img/s
+  ep7 step40/113 loss 1.6510 lr_proj 2.71e-04 1713.1 img/s
+  ep7 step60/113 loss 1.6441 lr_proj 2.68e-04 1933.7 img/s
+  ep7 step80/113 loss 1.6474 lr_proj 2.65e-04 2069.9 img/s
+  ep7 step100/113 loss 1.6424 lr_proj 2.61e-04 2188.2 img/s
+[epoch 7/20] stage2 loss 1.6404 12.8s peak 2.81GB
+  T2I@1 0.3195 I2T@1 0.4241 T2I@5 0.6367 I2T@5 0.7446 T2I@10 0.7521 I2T@10 0.8442 T2I-NDCG@10 0.5253 I2T-NDCG@10 0.4215
+  -> 新的 best (0.3718) 已保存
+  ep8 step20/113 loss 1.6068 lr_proj 2.56e-04 1298.6 img/s
+  ep8 step40/113 loss 1.5808 lr_proj 2.52e-04 1730.9 img/s
+  ep8 step60/113 loss 1.5833 lr_proj 2.49e-04 1985.0 img/s
+  ep8 step80/113 loss 1.5826 lr_proj 2.45e-04 2137.2 img/s
+  ep8 step100/113 loss 1.5773 lr_proj 2.41e-04 2254.2 img/s
+[epoch 8/20] stage2 loss 1.5758 12.5s peak 2.81GB
+  T2I@1 0.3355 I2T@1 0.4556 T2I@5 0.6485 I2T@5 0.7436 T2I@10 0.7651 I2T@10 0.8442 T2I-NDCG@10 0.5379 I2T-NDCG@10 0.4363
+  -> 新的 best (0.3956) 已保存
+  ep9 step20/113 loss 1.5126 lr_proj 2.35e-04 1312.0 img/s
+  ep9 step40/113 loss 1.5177 lr_proj 2.31e-04 1751.6 img/s
+  ep9 step60/113 loss 1.5074 lr_proj 2.27e-04 1970.7 img/s
+  ep9 step80/113 loss 1.5042 lr_proj 2.22e-04 2088.7 img/s
+  ep9 step100/113 loss 1.5105 lr_proj 2.18e-04 2198.5 img/s
+[epoch 9/20] stage2 loss 1.5085 12.8s peak 2.81GB
+  T2I@1 0.3473 I2T@1 0.4596 T2I@5 0.6558 I2T@5 0.7732 T2I@10 0.7679 I2T@10 0.8609 T2I-NDCG@10 0.5474 I2T-NDCG@10 0.4469
+  -> 新的 best (0.4035) 已保存
+  ep10 step20/113 loss 1.4511 lr_proj 2.11e-04 1351.2 img/s
+  ep10 step40/113 loss 1.4633 lr_proj 2.06e-04 1817.4 img/s
+  ep10 step60/113 loss 1.4653 lr_proj 2.02e-04 2041.1 img/s
+  ep10 step80/113 loss 1.4639 lr_proj 1.97e-04 2189.6 img/s
+  ep10 step100/113 loss 1.4628 lr_proj 1.92e-04 2296.8 img/s
+[epoch 10/20] stage2 loss 1.4625 12.3s peak 2.81GB
+  T2I@1 0.3515 I2T@1 0.4753 T2I@5 0.6641 I2T@5 0.7682 T2I@10 0.7720 I2T@10 0.8649 T2I-NDCG@10 0.5529 I2T-NDCG@10 0.4576
+  -> 新的 best (0.4134) 已保存
+  ep11 step20/113 loss 1.4176 lr_proj 1.85e-04 1324.1 img/s
+  ep11 step40/113 loss 1.4238 lr_proj 1.80e-04 1764.9 img/s
+  ep11 step60/113 loss 1.4182 lr_proj 1.75e-04 2007.4 img/s
+  ep11 step80/113 loss 1.4122 lr_proj 1.70e-04 2150.7 img/s
+  ep11 step100/113 loss 1.4167 lr_proj 1.65e-04 2251.3 img/s
+[epoch 11/20] stage2 loss 1.4178 12.5s peak 2.81GB
+  T2I@1 0.3527 I2T@1 0.4803 T2I@5 0.6728 I2T@5 0.7761 T2I@10 0.7803 I2T@10 0.8708 T2I-NDCG@10 0.5585 I2T-NDCG@10 0.4643
+  -> 新的 best (0.4165) 已保存
+  ep12 step20/113 loss 1.3899 lr_proj 1.57e-04 1293.0 img/s
+  ep12 step40/113 loss 1.3908 lr_proj 1.53e-04 1730.7 img/s
+  ep12 step60/113 loss 1.3834 lr_proj 1.48e-04 1956.3 img/s
+  ep12 step80/113 loss 1.3731 lr_proj 1.43e-04 2082.1 img/s
+  ep12 step100/113 loss 1.3727 lr_proj 1.38e-04 2190.0 img/s
+[epoch 12/20] stage2 loss 1.3733 12.8s peak 2.81GB
+  T2I@1 0.3653 I2T@1 0.4793 T2I@5 0.6750 I2T@5 0.7811 T2I@10 0.7824 I2T@10 0.8738 T2I-NDCG@10 0.5663 I2T-NDCG@10 0.4687
+  -> 新的 best (0.4223) 已保存
+  ep13 step20/113 loss 1.3447 lr_proj 1.30e-04 1273.4 img/s
+  ep13 step40/113 loss 1.3464 lr_proj 1.25e-04 1709.5 img/s
+  ep13 step60/113 loss 1.3424 lr_proj 1.20e-04 1941.6 img/s
+  ep13 step80/113 loss 1.3500 lr_proj 1.16e-04 2077.9 img/s
+  ep13 step100/113 loss 1.3469 lr_proj 1.11e-04 2189.2 img/s
+[epoch 13/20] stage2 loss 1.3468 12.8s peak 2.81GB
+  T2I@1 0.3663 I2T@1 0.4892 T2I@5 0.6809 I2T@5 0.7821 T2I@10 0.7826 I2T@10 0.8708 T2I-NDCG@10 0.5678 I2T-NDCG@10 0.4748
+  -> 新的 best (0.4277) 已保存
+  ep14 step20/113 loss 1.3178 lr_proj 1.03e-04 1294.1 img/s
+  ep14 step40/113 loss 1.3276 lr_proj 9.85e-05 1741.3 img/s
+  ep14 step60/113 loss 1.3213 lr_proj 9.40e-05 1959.3 img/s
+  ep14 step80/113 loss 1.3231 lr_proj 8.95e-05 2092.2 img/s
+  ep14 step100/113 loss 1.3217 lr_proj 8.51e-05 2191.6 img/s
+[epoch 14/20] stage2 loss 1.3238 12.8s peak 2.81GB
+  T2I@1 0.3698 I2T@1 0.5000 T2I@5 0.6850 I2T@5 0.7791 T2I@10 0.7884 I2T@10 0.8767 T2I-NDCG@10 0.5719 I2T-NDCG@10 0.4767
+  -> 新的 best (0.4349) 已保存
+  ep15 step20/113 loss 1.3158 lr_proj 7.79e-05 1273.8 img/s
+  ep15 step40/113 loss 1.3224 lr_proj 7.37e-05 1721.7 img/s
+  ep15 step60/113 loss 1.3159 lr_proj 6.95e-05 1936.5 img/s
+  ep15 step80/113 loss 1.3080 lr_proj 6.54e-05 2080.4 img/s
+  ep15 step100/113 loss 1.3070 lr_proj 6.15e-05 2191.0 img/s
+[epoch 15/20] stage2 loss 1.3056 12.8s peak 2.81GB
+  T2I@1 0.3708 I2T@1 0.4970 T2I@5 0.6901 I2T@5 0.7880 T2I@10 0.7927 I2T@10 0.8757 T2I-NDCG@10 0.5747 I2T-NDCG@10 0.4784
+  ep16 step20/113 loss 1.2890 lr_proj 5.51e-05 1327.3 img/s
+  ep16 step40/113 loss 1.2946 lr_proj 5.14e-05 1750.9 img/s
+  ep16 step60/113 loss 1.2912 lr_proj 4.77e-05 1981.0 img/s
+  ep16 step80/113 loss 1.2883 lr_proj 4.42e-05 2109.5 img/s
+  ep16 step100/113 loss 1.2880 lr_proj 4.08e-05 2210.9 img/s
+[epoch 16/20] stage2 loss 1.2886 12.7s peak 2.81GB
+  T2I@1 0.3732 I2T@1 0.5020 T2I@5 0.6888 I2T@5 0.7890 T2I@10 0.7929 I2T@10 0.8777 T2I-NDCG@10 0.5763 I2T-NDCG@10 0.4814
+  -> 新的 best (0.4376) 已保存
+  ep17 step20/113 loss 1.3002 lr_proj 3.55e-05 1320.1 img/s
+  ep17 step40/113 loss 1.2820 lr_proj 3.24e-05 1764.2 img/s
+  ep17 step60/113 loss 1.2782 lr_proj 2.94e-05 1980.0 img/s
+  ep17 step80/113 loss 1.2787 lr_proj 2.66e-05 2122.5 img/s
+  ep17 step100/113 loss 1.2733 lr_proj 2.39e-05 2225.1 img/s
+[epoch 17/20] stage2 loss 1.2746 12.6s peak 2.81GB
+  T2I@1 0.3738 I2T@1 0.5020 T2I@5 0.6919 I2T@5 0.7899 T2I@10 0.7949 I2T@10 0.8777 T2I-NDCG@10 0.5774 I2T-NDCG@10 0.4835
+  -> 新的 best (0.4379) 已保存
+  ep18 step20/113 loss 1.2886 lr_proj 1.97e-05 1271.7 img/s
+  ep18 step40/113 loss 1.2872 lr_proj 1.74e-05 1713.4 img/s
+  ep18 step60/113 loss 1.2827 lr_proj 1.52e-05 1957.1 img/s
+  ep18 step80/113 loss 1.2842 lr_proj 1.31e-05 2087.1 img/s
+  ep18 step100/113 loss 1.2792 lr_proj 1.12e-05 2206.2 img/s
+[epoch 18/20] stage2 loss 1.2786 12.7s peak 2.81GB
+  T2I@1 0.3761 I2T@1 0.5000 T2I@5 0.6917 I2T@5 0.7919 T2I@10 0.7947 I2T@10 0.8777 T2I-NDCG@10 0.5785 I2T-NDCG@10 0.4836
+  -> 新的 best (0.4381) 已保存
+  ep19 step20/113 loss 1.2754 lr_proj 8.33e-06 1277.3 img/s
+  ep19 step40/113 loss 1.2617 lr_proj 6.80e-06 1706.8 img/s
+  ep19 step60/113 loss 1.2628 lr_proj 5.43e-06 1935.1 img/s
+  ep19 step80/113 loss 1.2544 lr_proj 4.20e-06 2070.1 img/s
+  ep19 step100/113 loss 1.2595 lr_proj 3.13e-06 2187.3 img/s
+[epoch 19/20] stage2 loss 1.2614 12.8s peak 2.81GB
+  T2I@1 0.3748 I2T@1 0.5030 T2I@5 0.6915 I2T@5 0.7899 T2I@10 0.7943 I2T@10 0.8777 T2I-NDCG@10 0.5778 I2T-NDCG@10 0.4839
+  -> 新的 best (0.4389) 已保存
+  ep20 step20/113 loss 1.2790 lr_proj 1.71e-06 1465.1 img/s
+  ep20 step40/113 loss 1.2658 lr_proj 1.05e-06 1838.0 img/s
+  ep20 step60/113 loss 1.2642 lr_proj 5.56e-07 2045.7 img/s
+  ep20 step80/113 loss 1.2675 lr_proj 2.16e-07 2163.5 img/s
+  ep20 step100/113 loss 1.2674 lr_proj 3.35e-08 2263.5 img/s
+[epoch 20/20] stage2 loss 1.2640 12.4s peak 2.81GB
+  T2I@1 0.3751 I2T@1 0.5039 T2I@5 0.6919 I2T@5 0.7919 T2I@10 0.7949 I2T@10 0.8767 T2I-NDCG@10 0.5781 I2T-NDCG@10 0.4842
+  -> 新的 best (0.4395) 已保存
+[done] best=0.4395 输出目录 /root/autodl-tmp/crossModelRetrieval/output/dual_tower
